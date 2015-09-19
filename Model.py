@@ -34,9 +34,14 @@ class Indicator():
         return self.K, self.D, self.DSlow
     
     # Larry William %R
-    def WilliamR(self, 
+    def WilliamR(self, Scale):
+        '''
+        Larry William %R: on a negative scale from -100 to 0
+        -100: today was lowest low of past N days (oversold)
+        '''
     
 
 def main():
     # Example
     df = pd.DataFrame({'a':[1,2,4,5,9],'b':[2,3,1,6,15], 'c':[3,4,10,8,17]})
+    
