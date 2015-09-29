@@ -1,5 +1,9 @@
 from __future__ import division
 import pandas as pd
+import numpy as np
+import datetime
+
+CURRENT = datetime.datetime.now()
 
 # Indicator
 class Indicator():
@@ -39,9 +43,80 @@ class Indicator():
         Larry William %R: on a negative scale from -100 to 0
         -100: today was lowest low of past N days (oversold)
         '''
+        Current = self.DF[Scale-1:]
+        Low = pd.rolling_min(self.DF, Scale)[Scale-1:]
+        High = pd.rolling_max(self.DF, Scale)[Scale-1:]
+        self.WilliamR = -100 * ( High - Current ) / (High - Low)
     
+        return self.WilliamR
+    
+    # 
+    
+
+class TradeData():
+    
+    def __init__(self, Data):
+        self.DF = Data
+        
+
+# Pull Data
+import tushare as ts
+import os 
+os.chdir('C:/Users/zklnu66/Desktop')
+
+# Industry
+StockInfo = ts.get_industry_classified()
+StockInfo = StockInfo.rename(columns = {'c_name': 'industry'})
+StockInfo = StockInfo.set_index('code')
+StockInfo = StockInfo.drop('name', 1)
+
+# Concept
+Concept = ts.get_concept_classified()
+Concept = Concept.set_index('code')
+Concept = Concept.rename(columns = {'c_name': 'concept'})
+Concept = Concept.drop('name', 1)
+# Load Concept Mapping from local drive
+concept_translation = 
+
+# Merge
+StockInfo = pd.merge(StockInfo, Concept, how = 'outer', on = 'code')
+
+# get all stocks
+StockName = Industry['code']
+StockName.to_csv('./ASHR/DATA/StockName.csv', index = False)
+
+# Small & Medium Enterprise
+# Note SME is a pd.series data type
+SME = ts.get_sme_classified()['code']
+SME.to_csv('./ASHR/DATA/SME.csv', index = False)
+
+# Growth Enterprise Market
+GEM = ts.get_gem_classified()['code']
+GEM.to_csv('./ASHR/DATA/GEM.csv', index = False)
+
+# ST Enterprise
+ST = ts.get_st_classified()['code']
+ST.to_csv('./ASHR/DATA/ST.csv', index = False)
+
+# HS 300
+HS300S = ts.get_hs300s()['code']
+HS300S.to_csv('./ASHR/DATA/HS300S.csv', index = False)
+
+# SZ 50
+SZ50S = ts.get_sz50s()['code']
+SZ50S.to_csv('./ASHR/DATA/SZ50S.csv', index = False)
+
+# ZZ 500
+ZZ500S = ts.get_zz500s()['code']
+ZZ500S.to_csv('./ASHR/DATA/ZZ500S.csv', index = False)
+
+# Fund Holdings
+# TODO Data is available quarterly
+FundHolding = ts.fund_holdings(CURRENT.year, np.floor((CURRENT.month+2)/3))
+
 
 def main():
     # Example
     df = pd.DataFrame({'a':[1,2,4,5,9],'b':[2,3,1,6,15], 'c':[3,4,10,8,17]})
-    
+    df2 = pd.DataFrame({'a':[1,2,4,5,9],'bb':['a','b','c','d','e'], 'c':[3,4,10,8,18]})
+
