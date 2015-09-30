@@ -1,7 +1,15 @@
+
+
 from __future__ import division
 import pandas as pd
 import numpy as np
 import datetime
+
+import sys  
+
+reload(sys)  
+sys.setdefaultencoding('ascii')
+sys.setdefaultencoding('utf8')
 
 CURRENT = datetime.datetime.now()
 
@@ -66,7 +74,7 @@ class TradeData():
 
 import tushare as ts
 import os 
-os.chdir('C:/Users/zklnu66/Desktop')
+os.chdir('/Users/Hui/Desktop')
 
 #################
 #  Fundamentals #
@@ -75,13 +83,11 @@ os.chdir('C:/Users/zklnu66/Desktop')
 # Industry, PE, Outstanding, PB, TimeToMarket, Concept
 
 StockInfo = ts.get_stock_basics()
-StockInfo = StockInfo.set_index('code')
 StockInfo = StockInfo.drop(['name', 'area', 'totals', 'totalAssets', 'liquidAssets', \
-    'fixedAssets', 'reserved', 'reservedPerShare', 'eps', 'bvps'], axis = 1)
+    'fixedAssets', 'reserved', 'reservedPerShare', 'esp', 'bvps'], axis = 1)
 
 # Concept
 Concept = ts.get_concept_classified()
-Concept = Concept.set_index('code')
 Concept = Concept.rename(columns = {'c_name': 'concept'})
 Concept = Concept.drop('name', axis = 1)
 # TODO Load Concept Mapping from local drive
@@ -131,7 +137,7 @@ FundHolding = ts.fund_holdings(CURRENT.year, np.floor((CURRENT.month+2)/3))
 # Financial Report #
 ####################
 
-# FinancialReport: EPS, EPS_YOY, ROE, EPCF (cash flow per share),net_profits, profits_yoy
+# FinancialReport: EPS, EPS_YOY, ROE, net_profits, profits_yoy
 # ProfitData: ROE, net_profit_ratio, gross_profit_rate, EPS, bips (business income per share)
 # GrowthData: mbrg (main business rate growth), nprg (net profit), 
 #             nav, targ (total asset), epsg, seg (shareholder's eqty)
@@ -142,15 +148,19 @@ FundHolding = ts.fund_holdings(CURRENT.year, np.floor((CURRENT.month+2)/3))
 # TODO Compare data for FinancialReport and ProfitData
 
 FinancialData = ts.get_report_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
-FinancialData = FinancialData.drop(['name', 'bvps', 'distrib', 'report_date'], axis = 1)
+FinancialData = FinancialData.set_index('code')
+FinancialData = FinancialData.drop(['name', 'bvps', 'distrib', 'epcf', 'report_date'], axis = 1)
 
 ProfitData = ts.get_profit_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
+ProfitData = ProfitData.set_index('code')
 ProfitData = ProfitData.drop(['name', 'bvps', 'distrib', 'report_date'], axis = 1)
 
 GrowthData = ts.get_growth_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
+GrowthData = GrowthData.set_index('code')
 GrowthData = GrowthData.drop(['name'], axis = 1)
 
 DebtPayingData = ts.get_debtpaying_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
+DebtPayingData = DebtPayingData.set_index('code')
 DebtPayingData = DebtPayingData.drop(['name', 'sheqratio', 'adratio'], axis = 1)
 
 # Merging data
@@ -158,7 +168,9 @@ for subtab in [FinancialData, ProfitData, GrowthData, DebtPayingData]:
     StockInfo = pd.merge(StockInfo, subtab, how = 'outer', on = 'code')
 
 # Saving data
-StockInfo = StockInfo.to_csv('./ASHR/DATA/StockInfo.csv', index = False)
+StockInfo = StockInfo.to_csv('./ASHR/DATA/StockInfo.csv', index = True)
+StockInfo.
+
 
 ################
 ##   Trade    ##
@@ -180,3 +192,4 @@ def main():
     # Example
     df = pd.DataFrame({'a':[1,2,4,5,9],'b':[2,3,1,6,15], 'c':[3,4,10,8,17]})
     df2 = pd.DataFrame({'a':[1,2,4,5,9],'bb':['a','b','c','d','e'], 'c':[3,4,10,8,18]})
+    df.reset_index()
