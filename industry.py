@@ -13,3 +13,43 @@
   'InformationTechnology', 'ConsumerDiscretionary', 'ConsumerDiscretionary', 'Utilities', 'ConsumerDiscretionary', 
   'ConsumerDiscretionary', 'Materials', 'ConsumerDiscretionary', 'Materials', 'Industrials', 'ConsumerDiscretionary',
   'Materials', 'ConsumerDiscretionary']
+
+
+13      SZ000017
+232     SZ000688
+236     SZ000693
+423     SZ000975
+543     SZ002103
+545     SZ002105
+731     SZ002301
+777     SZ002348
+929     SZ002502
+1000    SZ002575
+1030    SZ002605
+1034    SZ002610
+1101    SZ002678
+1122    SZ002699
+1137    SZ002716
+1141    SZ002721
+1203    SZ300043
+1345    SZ300186
+1487    SZ300328
+1488    SZ300329
+1496    SZ300337
+1697    SH600158
+1709    SH600172
+1887    SH600392
+1971    SH600516
+2092    SH600661
+2107    SH600679
+2184    SH600766
+2199    SH600783
+2228    SH600818
+2324    SH600988
+2351    SH601069
+2396    SH601388
+2500    SH603399
+2514    SH603688
+2519    SH603799
+2522    SH603899
+2524    SH603993
