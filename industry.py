@@ -14,7 +14,7 @@
   'ConsumerDiscretionary', 'Materials', 'ConsumerDiscretionary', 'Materials', 'Industrials', 'ConsumerDiscretionary',
   'Materials', 'ConsumerDiscretionary']
 
-
+ 
 13      SZ000017
 232     SZ000688
 236     SZ000693
