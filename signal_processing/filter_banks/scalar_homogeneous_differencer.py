@@ -1,5 +1,5 @@
-from qz.analytics.signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
-from qz.analytics.signal_processing.filters.polyema.scalar_polyema import ScalarPolyEma
+from signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
+from signal_processing.filters.polyema.scalar_polyema import ScalarPolyEma
 
 class ScalarHomogeneousDifferencer(ScalarFilterBase):
 
@@ -60,6 +60,9 @@ class ScalarHomogeneousDifferencer(ScalarFilterBase):
 
         self._pos_arm.make(M1_pos)
         self._neg_arm.make(M1_neg)
+        
+        # set the made flag
+        self._is_made = True
 
 
     def reset(self):
@@ -80,6 +83,11 @@ class ScalarHomogeneousDifferencer(ScalarFilterBase):
         # weighted by +/- 1.0, respectively.
         return (self._pos_arm.value() + self._neg_arm.value()) * self._weight
 
+    def initial_value(self):
+        
+        # return either underlying _v0 regardless of _init status
+        return self._pos_arm.initial_value()
+
     def isReady(self):
 
         return self._is_made and (self._pos_arm.isReady() and self._neg_arm.isReady())
@@ -99,6 +107,8 @@ class ScalarHomogeneousDifferencer(ScalarFilterBase):
         prop['name']      = self.getName()
         prop['weight']    = self._weight
         prop['arm_ratio'] = self._arm_ratio
+        prop['M1_pos']    = self._pos_arm.getLocation()
+        prop['M1_neg']    = self._neg_arm.getLocation()
 
         return prop
 
