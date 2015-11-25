@@ -1,7 +1,7 @@
 from   collections import deque
-from   qz.analytics.signal_processing.filter_banks.scalar_homogeneous_differencer import ScalarHomogeneousDifferencer
-from   qz.analytics.signal_processing.filter_banks.scalar_homogeneous_double_differencer import ScalarHomogeneousDoubleDifferencer
-from   qz.analytics.signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
+from   signal_processing.filter_banks.scalar_homogeneous_differencer import ScalarHomogeneousDifferencer
+from   signal_processing.filter_banks.scalar_homogeneous_double_differencer import ScalarHomogeneousDoubleDifferencer
+from   signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
 
 class SlopeCurvatureFilterBank(ScalarFilterBase):
 
