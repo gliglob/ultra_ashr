@@ -187,3 +187,4 @@ class ScalarPolyEma(ScalarFilterBase):
     def _getCoefs(self):
 
         return [self._Xcoef, self._Ycoef]
+
