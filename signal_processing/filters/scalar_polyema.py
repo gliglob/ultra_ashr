@@ -1,5 +1,5 @@
-from   qz.analytics.signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
-from   qz.analytics.signal_processing.utils.fixed_length_circular_buffer import FixedLengthCircularBuffer
+from   signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
+from   signal_processing.utils.fixed_length_circular_buffer import FixedLengthCircularBuffer
 import numpy
 
 
@@ -129,6 +129,11 @@ class ScalarPolyEma(ScalarFilterBase):
 
         # must restore the initial offset and apply the filter weight
         return (self._yn.first() + self._v0) * self._weight
+        
+    def initial_value(self):
+        
+        # return _v0 regardless of _init status
+        return self._v0
 
     def isReady(self):
 
