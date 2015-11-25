@@ -1,6 +1,5 @@
-
-from   qz.analytics.signal_processing.filter_banks.scalar_homogeneous_differencer import ScalarHomogeneousDifferencer
-from   qz.analytics.signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
+from   signal_processing.filter_banks.scalar_homogeneous_differencer import ScalarHomogeneousDifferencer
+from   signal_processing.filters.base.scalar_filter_base import ScalarFilterBase
 
 
 class ScalarHomogeneousDoubleDifferencer(ScalarFilterBase):
