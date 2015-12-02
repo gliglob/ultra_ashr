@@ -6,6 +6,7 @@
 import datetime, time, os
 import pandas as pd
 import numpy as np
+from Static import STATIC
 
 def CodeWrapper(series):
     """
@@ -61,7 +62,7 @@ def DropOutliers(df, column):
         /column/: the target column within the data frame
     NOTE: apply the function to intraday data only as jumps are likely for overnight
     """
-    df = df[np.abs(df[column] - df[column].mean()) <= 3 * df[column].std()]
+    df = df[np.abs(df[column] - df[column].mean()) <= 5 * df[column].std()]
     return df
     
 def DropWeekend(df):
@@ -71,11 +72,11 @@ def DropWeekend(df):
     df = df[df['time'].apply(lambda x: x.isoweekday() in range(1,6))]
     return df
 
-def DropHoliday(df, HolidayList):
+def DropHoliday(df):
     """
     Excluding the holidays
     """
-    df = df[df['time'].apply(lambda x: x.date() not in HolidayList)]
+    df = df[df['time'].apply(lambda x: x.date() not in STATIC.HOLIDAYLIST)]
     return df
     
 def RestrictTradingHour(df, RestrictingLst, TimeFormat = False):
@@ -133,13 +134,12 @@ def ReadExcel(file, sheetname):
     df = file.parse(sheetname)
     return df
 
-def AddBusinessDay(Date, NumOfDaysToAdd, HolidayList):
+def AddBusinessDay(Date, NumOfDaysToAdd):
     """
     Add any number of business days given a date
     Input:
         /Date/: Reference business datetime.datetime object or datetime.date object
         /NumOfDaysToAdd/: Number of days to add
-        /HolidayList/: Holiday List
     Output:
         /Date/: The resulting date with added days. Returning same data type as the Date input.
     """
@@ -147,16 +147,16 @@ def AddBusinessDay(Date, NumOfDaysToAdd, HolidayList):
     while NumOfDaysToAdd != 0:
         if NumOfDaysToAdd > 0:
             CurrentDate += datetime.timedelta(days=1)
-            if (CurrentDate.date() not in HolidayList) and (CurrentDate.date().isoweekday() in range(1, 6)):
+            if (CurrentDate.date() not in STATIC.HOLIDAYLIST) and (CurrentDate.date().isoweekday() in range(1, 6)):
                 NumOfDaysToAdd -= 1
         else:
             CurrentDate -= datetime.timedelta(days=1)
-            if (CurrentDate.date() not in HolidayList) and (CurrentDate.date().isoweekday() in range(1, 6)):
+            if (CurrentDate.date() not in STATIC.HOLIDAYLIST) and (CurrentDate.date().isoweekday() in range(1, 6)):
                 NumOfDaysToAdd += 1
     CurrentDate = CurrentDate.date() if type(Date) == datetime.date else CurrentDate
     return CurrentDate
 
-def GenerateMasterClock(StartDate, EndDate, Scale, TradingHours, HolidayList):
+def GenerateMasterClock(StartDate, EndDate, Scale):
     """
     Gnerate the master wall clock
     Restricting to trading hours, non holidays only
@@ -175,8 +175,8 @@ def GenerateMasterClock(StartDate, EndDate, Scale, TradingHours, HolidayList):
 
 
     def CheckTradingHours(date):
-        for i in range(0, len(TradingHours), 2):
-            if (date.time() >= TradingHours[i]) and (date.time() <= TradingHours[i+1]):
+        for i in range(0, len(STATIC.TRADINGHOURS), 2):
+            if (date.time() >= STATIC.TRADINGHOURS[i]) and (date.time() <= STATIC.TRADINGHOURS[i+1]):
                 return True
         return False
             
@@ -186,7 +186,7 @@ def GenerateMasterClock(StartDate, EndDate, Scale, TradingHours, HolidayList):
     if Scale[-1] == 'd':
         date = StartDate
         while (date <= EndDate):
-            if (date not in HolidayList) and (date.isoweekday() in range(1, 6)):
+            if (date not in STATIC.HOLIDAYLIST) and (date.isoweekday() in range(1, 6)):
                 df.loc[ind] = [date]
                 ind += 1
             date += datetime.timedelta(days = int(Scale[:-1]))
@@ -194,7 +194,7 @@ def GenerateMasterClock(StartDate, EndDate, Scale, TradingHours, HolidayList):
     elif Scale[-1] == 's' or Scale[-1] == 'm' or Scale[-1] == 'h':
         date = StartDate
         while (date <= EndDate):
-            if (date.date() not in HolidayList) and (CheckTradingHours(date)) and (date.date().isoweekday() in range(1, 6)):
+            if (date.date() not in STATIC.HOLIDAYLIST) and (CheckTradingHours(date)) and (date.date().isoweekday() in range(1, 6)):
                 df.loc[ind] = [date]
                 ind += 1
             date += ScaleMapping(Scale)
