@@ -22,5 +22,5 @@ for index in IndexList:
             'sell1Volume', 'sell2Volume', 'sell3Volume', 'sell4Volume', 'sell5Volume'])
         
         df_index = IndexDataCleaning(df_index)
-        df_index = IndexDataProcessing(df_index, IntradayMasterClock)
+        df_index = IndexDataProcessing(df_index)
         df_index.to_csv('./ASHR/DATA/Index/Processed/%s/%s.csv'%(index, date))
