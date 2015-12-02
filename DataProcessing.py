@@ -3,8 +3,9 @@ Data Processing
 """
 
 from SetUp import *
+from Config import CONFIG
 
-def TickDataProcessing(df, IntradayMasterClock):
+def TickDataProcessing(df):
     """
     Add the following features/columns:
         /amount/:     price * volume
@@ -17,7 +18,7 @@ def TickDataProcessing(df, IntradayMasterClock):
     """
     
     def OrderTypeMap(e):
-        return "A" if e >= 500000 else "B"
+        return "A" if e >= CONFIG.TYPEA_CUTOFF else "B"
         
     df['amount'] = df['price'] * df['volume']
     df['amountRolling'] = df['amount'].cumsum()
@@ -49,11 +50,11 @@ def TickDataProcessing(df, IntradayMasterClock):
     
     # Asof join by MasterClock
     df = df.set_index('time')
-    df = df.apply(lambda x: x.asof(IntradayMasterClock.MasterClock))
+    df = df.apply(lambda x: x.asof(CONFIG.INTRADAYMASTERCLOCK.MasterClock))
     
     return df
     
-def SecondDataProcessing(df, IntradayMasterClock):
+def SecondDataProcessing(df):
     """
     Generate 3 second master clock, as of join.
     Add the following features:
@@ -65,13 +66,13 @@ def SecondDataProcessing(df, IntradayMasterClock):
     df = DropColumn(df, ['exchange', 'ticker', 'pendingBuyVolume', 'pendingSellVolume', 'buy1Volume', 'buy2Volume', 'buy3Volume', 'buy4Volume', 'buy5Volume', 'sell1Volume', 'sell2Volume', 'sell3Volume', 'sell4Volume', 'sell5Volume', 'price'])    
     ### TODO: Note, at the moment is pulling the date info from the dataframe
     Date = df['time'].iloc[0].date()
-    MasterClock = AddDateToIntradayMasterClock(Date, IntradayMasterClock)
+    MasterClock = AddDateToIntradayMasterClock(Date, CONFIG.INTRADAYMASTERCLOCK)
     # Asof join by MasterClock
     df = df.set_index('time')
     df = df.apply(lambda x: x.asof(MasterClock.MasterClock))
     return df
 
-def IndexDataProcessing(df, IntradayMasterClock):
+def IndexDataProcessing(df):
     """
     Process the index data, generate 3 second master clock, as of join.
     Output:
@@ -79,7 +80,7 @@ def IndexDataProcessing(df, IntradayMasterClock):
     """
     df = DropColumn(df, ['volume'])    
     Date = df['time'].iloc[0].date()
-    MasterClock = AddDateToIntradayMasterClock(Date, IntradayMasterClock)
+    MasterClock = AddDateToIntradayMasterClock(Date, CONFIG.INTRADAYMASTERCLOCK)
     # Asof join by MasterClock
     df = df.set_index('time')
     df = df.apply(lambda x: x.asof(MasterClock.MasterClock))
