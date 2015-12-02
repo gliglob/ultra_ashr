@@ -7,39 +7,37 @@ from HelperFunctions import *
 from DataProcessing import *
 from DataCleaning import *
 from FeaturePreparation import *
+from Config import CONFIG
 logging.info('Setting up...')
 
 # Tick Data Example
 
-TradingDays = GenerateMasterClock(datetime.date(2015, 9, 1), datetime.date(2015, 9, 7), '1d', TradingHours, HolidayList).MasterClock
-TradingDays = TradingDays.map(lambda x: x.strftime('%Y%m%d')).tolist()
-
-DailyData = DailyDataFrame.copy()
+DailyData = CONFIG.DAILYDATAFRAME.copy()
 
 
 stock = 'SH600000'
 # Make directory for stock to save processed data
-if not os.path.exists('./ASHR/DATA/Processed/%s/'%stock):
-    os.makedirs('./ASHR/DATA/Processed/%s/'%stock)
+if not os.path.exists(CONFIG.PROCESSEDFOLDERPATH%stock):
+    os.makedirs(CONFIG.PROCESSEDFOLDERPATH%stock)
 
 #########################
 # Read and Process Data #
 #########################
 
-logging.warning('Reading and Processing Data Start... For Stock %s From %s To %s...'%(stock, TradingDays[0], TradingDays[-1]))
-#date = TradingDays[0]
-for date in TradingDays:
-    TickDataPath = './ASHR/DATA/Test/Test_Tick/%s/%s/%s.csv'%(date[:-2], date, stock)
-    SecondDataPath = './ASHR/DATA/Test/Test_Second/%s/%s/%s_%s.csv'%(date[:-2], date, stock, date)
+logging.warning('Reading and Processing Data Start... For Stock %s From %s To %s...'%(stock, CONFIG.TRADINGDAYS[0], CONFIG.TRADINGDAYS[-1]))
+
+for date in CONFIG.TRADINGDAYS:
+    TickDataPath = CONFIG.TICKDATAPATH%(date[:-2], date, stock)
+    SecondDataPath = CONFIG.SECONDDATAPATH%(date[:-2], date, stock, date)
 
     try: 
         STARTTIME = time.time()
-        df_tick = pd.read_csv(TickDataPath, header = None, names = ['time', 'price', 'side', 'volume']
+        df_tick = pd.read_csv(TickDataPath, header = None, names = ['time', 'price', 'side', 'volume'])
         length1 = len(df_tick)
         df_tick = TickDataCleaning(df_tick)
-        if len(df_tick) - length1 > 100:
-            logging.warning('Tick Data for %s on %s contains more than 100 NA values'%(stock, date))
-        df_tick = TickDataProcessing(df_tick, IntradayMasterClock)
+        if len(df_tick) - length1 > 10:
+            logging.warning('Tick Data for %s on %s contains more than 10 NA or outlier values'%(stock, date))
+        df_tick = TickDataProcessing(df_tick)
             
         # Second Data Example
         
@@ -52,9 +50,9 @@ for date in TradingDays:
         
         length1 = len(df_sec)
         df_sec = SecondDataCleaning(df_sec)
-        if len(df_sec) - length1 > 100:
-            logging.warning('Second Data for %s on %s contains more than 100 NA values'%(stock, date))
-        df_sec = SecondDataProcessing(df_sec, IntradayMasterClock)
+        if len(df_sec) - length1 > 5:
+            logging.warning('Second Data for %s on %s contains more than 5 NA and outlier values'%(stock, date))
+        df_sec = SecondDataProcessing(df_sec)
         
         
         # Concat Tick and Second Data
@@ -65,7 +63,7 @@ for date in TradingDays:
         df.index.name = 'time'    
         
         # Save Processed Daily Intraday 3sec Data
-        df.to_csv('./ASHR/DATA/Processed/%s/%s.csv'%(stock, date))
+        df.to_csv(CONFIG.PROCESSEDDATAPATH%(stock, date))
         
         ENDTIME = time.time()
         logger.info('Stock: %s, Date: %s, Time to Process: %f sec'%(stock, date, ENDTIME-STARTTIME))
@@ -80,34 +78,27 @@ for date in TradingDays:
 # Feature Preparation #
 #######################
 
-logging.warning('Standard Feature Preparation Start... For Stock %s From %s To %s...'%(stock, TradingDays[0], TradingDays[-1]))
+logging.warning('Standard Feature Preparation Start... For Stock %s From %s To %s...'%(stock, CONFIG.TRADINGDAYS[0], CONFIG.TRADINGDAYS[-1]))
 
-for date in TradingDays:
-    ProcessedDataPath = './ASHR/DATA/Processed/%s/%s.csv'%(stock, date)
+for date in CONFIG.TRADINGDAYS:
+    ProcessedDataPath = CONFIG.PROCESSEDDATAPATH%(stock, date)
     try:
         STARTTIME = time.time()  
         df = pd.read_csv(ProcessedDataPath, index_col = 'time')
         df.index = TimeWrapper3(df.index)
         # Prepare daily signals
         # TODO Prepare data by session
-        DailyData = FeaturePreparation(df, DailyData, HolidayList)
+        StockIndustryIndexMap = pd.read_csv(CONFIG.STOCKINDUSTRYMAPPATH, index_col = 'Ticker')
+        Index = StockIndustryIndexMap.Code[stock]
+        DailyData = FeaturePreparation(df, stock, Index, DailyData)
         
         ENDTIME = time.time()
         logger.info('Stock: %s, Date: %s, Time to Prepare Feature: %f sec'%(stock, date, ENDTIME-STARTTIME))
     except Exception:
         if (not os.path.isfile(ProcessedDataPath)):
-            logging.warning('Data for %s is misisng on %s when preparing features'%(stock, date))
+            logging.warning('Data for %s is missing on %s when preparing features'%(stock, date))
         else:
             logging.warning('Other Critical Error When Preparing Features for %s on %s'%(stock, date))
             
-
-##########################
-# Add Additional Feature #
-##########################
-FeatureToAdd = 'SpreadToIndustry'
-DailyData[FeatureToAdd] = None
-
-for date in TradingDays:
-    
 
 
