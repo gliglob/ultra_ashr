@@ -1,17 +1,4 @@
-
-
-from __future__ import division
-import pandas as pd
-import numpy as np
-import datetime
-
-import sys  
-
-reload(sys)  
-sys.setdefaultencoding('ascii')
-sys.setdefaultencoding('utf8')
-
-CURRENT = datetime.datetime.now()
+from SetUp import *
 
 # Indicator
 class Indicator():
@@ -58,7 +45,22 @@ class Indicator():
     
         return self.WilliamR
     
-    # 
+
+# RSI index
+
+def RSI(df, Scale):
+    from tools.filter_construction import Filter
+    df['U'] = (df['Close'] - df['Close'].shift(1)).map(lambda x: x if x > 0 else 0)
+    df['D'] = (df['Close'] - df['Close'].shift(1).map(lambda x: -x if x < 0 else 0)
+    M1 = Scale
+    RS = Filter('U', df['U'], M1, 'pmea') / Filter('D', df['D'], M1, 'pmea')
+    RSI = 100 - 100 / (1 + RS)
+    return RSI
+
+# CCI index
+
+def CCI(df, Scale):
+    
     
 
 class TradeData():
@@ -66,128 +68,7 @@ class TradeData():
     def __init__(self, Data):
         self.DF = Data
         
-#############
-#############
-# Pull Data #
-#############
-#############
 
-import tushare as ts
-import os 
-os.chdir('/Users/Hui/Desktop')
-
-#################
-#  Fundamentals #
-#################
-
-# Industry, PE, Outstanding, PB, TimeToMarket, Concept
-
-StockInfo = ts.get_stock_basics()
-StockInfo = StockInfo.drop(['name', 'area', 'totals', 'totalAssets', 'liquidAssets', \
-    'fixedAssets', 'reserved', 'reservedPerShare', 'esp', 'bvps'], axis = 1)
-
-# Concept
-Concept = ts.get_concept_classified()
-Concept = Concept.rename(columns = {'c_name': 'concept'})
-Concept = Concept.drop('name', axis = 1)
-# TODO Load Concept Mapping from local drive
-# concept_translation = 
-
-# Merge
-StockInfo = pd.merge(StockInfo, Concept, how = 'outer', on = 'code')
-
-# get all stocks
-StockName = StockInfo['code']
-StockName.to_csv('./ASHR/DATA/StockName.csv', index = False)
-
-# Small & Medium Enterprise
-# Note SME is a pd.series data type
-SME = ts.get_sme_classified()['code']
-SME.to_csv('./ASHR/DATA/SME.csv', index = False)
-
-# Growth Enterprise Market
-GEM = ts.get_gem_classified()['code']
-GEM.to_csv('./ASHR/DATA/GEM.csv', index = False)
-
-# ST Enterprise
-ST = ts.get_st_classified()['code']
-ST.to_csv('./ASHR/DATA/ST.csv', index = False)
-
-# HS 300
-HS300S = ts.get_hs300s()['code']
-HS300S.to_csv('./ASHR/DATA/HS300S.csv', index = False)
-
-# SZ 50
-SZ50S = ts.get_sz50s()['code']
-SZ50S.to_csv('./ASHR/DATA/SZ50S.csv', index = False)
-
-# ZZ 500
-ZZ500S = ts.get_zz500s()['code']
-ZZ500S.to_csv('./ASHR/DATA/ZZ500S.csv', index = False)
-
-#################
-# Fund Holdings #
-#################
-
-# TODO Data is available quarterly
-FundHolding = ts.fund_holdings(CURRENT.year, np.floor((CURRENT.month+2)/3))
-
-
-####################
-# Financial Report #
-####################
-
-# FinancialReport: EPS, EPS_YOY, ROE, net_profits, profits_yoy
-# ProfitData: ROE, net_profit_ratio, gross_profit_rate, EPS, bips (business income per share)
-# GrowthData: mbrg (main business rate growth), nprg (net profit), 
-#             nav, targ (total asset), epsg, seg (shareholder's eqty)
-# DebtPayingData: currentratio, quickratio, cashratio, icratio (interest coverage)
-
-
-# TODO Data is available quarterly
-# TODO Compare data for FinancialReport and ProfitData
-
-FinancialData = ts.get_report_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
-FinancialData = FinancialData.set_index('code')
-FinancialData = FinancialData.drop(['name', 'bvps', 'distrib', 'epcf', 'report_date'], axis = 1)
-
-ProfitData = ts.get_profit_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
-ProfitData = ProfitData.set_index('code')
-ProfitData = ProfitData.drop(['name', 'bvps', 'distrib', 'report_date'], axis = 1)
-
-GrowthData = ts.get_growth_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
-GrowthData = GrowthData.set_index('code')
-GrowthData = GrowthData.drop(['name'], axis = 1)
-
-DebtPayingData = ts.get_debtpaying_data(CURRENT.year, np.floor((CURRENT.month+2)/3))
-DebtPayingData = DebtPayingData.set_index('code')
-DebtPayingData = DebtPayingData.drop(['name', 'sheqratio', 'adratio'], axis = 1)
-
-# Merging data
-for subtab in [FinancialData, ProfitData, GrowthData, DebtPayingData]:
-    StockInfo = pd.merge(StockInfo, subtab, how = 'outer', on = 'code')
-
-# Saving data
-StockInfo = StockInfo.to_csv('./ASHR/DATA/StockInfo.csv', index = True)
-StockInfo.
-
-
-################
-##   Trade    ##
-################
-
-
-def WriteExcel(writer, sheet, df, index = False, header = True):
-    # Example: writer = pd.ExcelWriter('./ASHR/DATA/test.xlsx')
-    df.to_excel(writer, sheet, index = index, header = header)
-    writer.save()
-
-def ReadExcel(file, sheetname):
-    # Example: file = pd.ExcelFile('./ASHR/DATA/test.xlsx')
-    # read the sheet from the excel file
-    df = file.parse(sheetname)
-    return df
-    
 def main():
     # Example
     df = pd.DataFrame({'a':[1,2,4,5,9],'b':[2,3,1,6,15], 'c':[3,4,10,8,17]})
