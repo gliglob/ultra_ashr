@@ -15,7 +15,6 @@ def TickDataCleaning(df):
     
     df = DropNaData(df, ['time', 'price', 'volume', 'side'])
     df['time'] = TimeWrapper4(df['time'])
-#    df = RestrictTradingHour(df, TradingHours, TimeFormat = True)
     df = DropOutliers(df, 'price')
     return df
 
