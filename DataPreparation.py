@@ -15,7 +15,7 @@ logging.info('Setting up...')
 DailyData = CONFIG.DAILYDATAFRAME.copy()
 
 
-stock = 'SH600000'
+stock = CONFIG.STOCK[0]
 # Make directory for stock to save processed data
 if not os.path.exists(CONFIG.PROCESSEDFOLDERPATH%stock):
     os.makedirs(CONFIG.PROCESSEDFOLDERPATH%stock)
@@ -80,6 +80,9 @@ for date in CONFIG.TRADINGDAYS:
 
 logging.warning('Standard Feature Preparation Start... For Stock %s From %s To %s...'%(stock, CONFIG.TRADINGDAYS[0], CONFIG.TRADINGDAYS[-1]))
 
+Index = CONFIG.STOCKINDUSTRYINDEXMAP.Code[stock]
+logging.info('The corresponding industry index for stock %s is %s'%(stock, Index))
+
 for date in CONFIG.TRADINGDAYS:
     ProcessedDataPath = CONFIG.PROCESSEDDATAPATH%(stock, date)
     try:
@@ -88,8 +91,8 @@ for date in CONFIG.TRADINGDAYS:
         df.index = TimeWrapper3(df.index)
         # Prepare daily signals
         # TODO Prepare data by session
-        StockIndustryIndexMap = pd.read_csv(CONFIG.STOCKINDUSTRYMAPPATH, index_col = 'Ticker')
-        Index = StockIndustryIndexMap.Code[stock]
+        
+
         DailyData = FeaturePreparation(df, stock, Index, DailyData)
         
         ENDTIME = time.time()
