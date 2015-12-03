@@ -4,12 +4,15 @@ from Static import STATIC
 
 class CONFIG(object):
     
+    # STOCK
+    STOCK = ['SZ000001']
+    
     
     # File path
     TICKDATAPATH = './ASHR/DATA/Test/Test_Tick/%s/%s/%s.csv'
     SECONDDATAPATH = './ASHR/DATA/Test/Test_Second/%s/%s/%s_%s.csv'
     PROCESSEDFOLDERPATH = './ASHR/DATA/Processed/%s/'
-    PROCESSEDDATAPATH = './ASHR/DATA/Processed/%s/%s.csv'
+    PROCESSEDDATAPATH = './ASHR/DATA/%s/%s.csv'
     STOCKINDUSTRYMAPPATH = './ASHR/DATA/StockIndustryIndex.csv'
     STOCKLISTPATH = './ASHR/DATA/Index/Index/csi_all.xls'
     INDEXDATAPATH = './ASHR/DATA/%s/%s.csv'
@@ -33,8 +36,8 @@ class CONFIG(object):
     M1_3 = 48000    
     
     # Feature config
-    TRADINGSTARTDATE = datetime.date(2015, 9, 1)
-    TRADINGENDDATE = datetime.date(2015, 9, 7)
+    TRADINGSTARTDATE = datetime.date(2014, 12, 31)
+    TRADINGENDDATE = datetime.date(2014, 12, 31)
     MASTERCLOCKSCALE = '3s'
         
     # Daily Stock Data for a single Stock
@@ -60,4 +63,5 @@ class CONFIG(object):
     INTRADAYMASTERCLOCK['MasterClock'] = INTRADAYMASTERCLOCK['MasterClock'].apply(lambda x: x.time())
     
 
-
+    # Stock Industry Index Map
+    STOCKINDUSTRYINDEXMAP = pd.read_csv(STOCKINDUSTRYMAPPATH, index_col = 'Ticker')
