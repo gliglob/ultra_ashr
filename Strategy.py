@@ -36,7 +36,7 @@ def Strategy1(Stock, EnterDate, EnterPrice, TradingHorizon = 5, StopLossThresh =
     while True:
         
         if HoldingDay == MaxHoldingDay:
-                logging.warning('Backtest... max holding days %d expires for stock %s on %s, manually setting return to 0 '%(MaxHoldingDay, Stock, CurrentDay))
+                logging.warning('Strategy1 testing for %s... max holding days %d expires for stock %s on %s, manually setting return to 0 '%(EnterDate, MaxHoldingDay, Stock, CurrentDay))
                 ExitPosition = None
                 Return = 0
                 break
@@ -47,9 +47,9 @@ def Strategy1(Stock, EnterDate, EnterPrice, TradingHorizon = 5, StopLossThresh =
         if os.path.isfile(DataPath):
             CurrentData = pd.read_csv(DataPath, index_col = 'time')
             CurrentData['return'] = np.exp(CurrentData['price'] - EnterPrice) - 1
+            CurrentData['maxreturn'] = pd.rolling_max(CurrentData['return'], len(CurrentData), min_periods = 1)
+            CurrentData.maxreturn[CurrentData.maxreturn < MaxReturn] = MaxReturn
             if HoldingDay > 0:
-                CurrentData['maxreturn'] = pd.rolling_max(CurrentData['return'], len(CurrentData), min_periods = 1)
-                CurrentData.maxreturn[CurrentData.maxreturn < MaxReturn] = MaxReturn
                 CurrentData['drawdown'] = (CurrentData['return'] - CurrentData['maxreturn']) / CurrentData['maxreturn']
                 CurrentData['drawdown'][CurrentData['maxreturn'] == 0] = CurrentData['return'] - CurrentData['maxreturn']
                 Resulting = CurrentData.loc[((CurrentData['drawdown'] < -MaxProfitThresh) | (CurrentData['return'] < -StopLossThresh)) & (abs(CurrentData['return']) >= SellThresh)]           
@@ -66,13 +66,13 @@ def Strategy1(Stock, EnterDate, EnterPrice, TradingHorizon = 5, StopLossThresh =
                 break
 
             elif HoldingDay > TradingHorizon:
-                logging.warning('Backtesting... Holding Days Exceed Trading Horizon for stock %s, selling at open on %s, holding days = %d'%(Stock, CurrentDay, HoldingDay))
+                logging.warning('Strategy1 testing for %s... Holding Days Exceed Trading Horizon for stock %s, selling at open on %s, holding days = %d'%(EnterDate, Stock, CurrentDay, HoldingDay))
                 ExitPosition = CurrentData.index[0]
                 Return = CurrentData['return'].loc[ExitPosition]
                 break
             
         else:
-            logging.warning('Backtesting... Stock %s is closed on %s'%(Stock, CurrentDay))
+            logging.warning('Strategy1 testing for %s... Stock %s is closed on %s'%(EnterDate, Stock, CurrentDay))
             HoldingDay += 1
 
     return Return, ExitPosition
@@ -98,13 +98,23 @@ def Strategy2(Stock, EnterDate, EnterPrice, TradingHorizon = 1):
     CurrentDay = AddBusinessDay(EnterDate, TradingHorizon)
     DataPath = CONFIG.PROCESSEDDATAPATH%(Stock, CurrentDay.strftime('%Y%m%d'))
     Return = 0
-    while HoldingDay <= MaxHoldingDay:
+    ExitPosition = None
+    while True:
+        
+        if HoldingDay == MaxHoldingDay:
+            logging.warning('Strategy2 testing for %s... max holding days %d expires for stock %s on %s, manually setting return to 0 '%(EnterDate, MaxHoldingDay, Stock, CurrentDay))
+            ExitPosition = None
+            Return = 0
+            break
         if os.path.isfile(DataPath):
+            if HoldingDay > TradingHorizon:
+                logging.warning('Strategy2 testing for %s... Holding Days Exceed Trading Horizon for stock %s, selling at open on %s, holding days = %d'%(EnterDate, Stock, CurrentDay, HoldingDay))
             CurrentData = pd.read_csv(DataPath, index_col = 'time')
             ExitPosition = CurrentData.index[0]
             Return = np.exp(CurrentData['price'].iloc[0] - EnterPrice) - 1
             break
         else:
+            logging.warning('Strategy2 testing for %s... Stock %s is closed on %s'%(EnterDate, Stock, CurrentDay))
             CurrentDay = AddBusinessDay(CurrentDay, 1)
             DataPath = CONFIG.PROCESSEDDATAPATH%(Stock, CurrentDay.strftime('%Y%m%d'))
             HoldingDay += 1
