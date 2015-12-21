@@ -1,6 +1,7 @@
 def SlopeCurvatureConstruction(name, data, M1, filter_instance = None, order = 3):
     """
     Compute the slope (differencer) and curvature (double differencer)
+    NOTE: no missing data allowed
     Input: 
     /name/: name of the filter
     /data/: data to be filtered
