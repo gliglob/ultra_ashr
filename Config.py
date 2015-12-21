@@ -5,14 +5,14 @@ from Static import STATIC
 class CONFIG(object):
     
     # STOCK
-    STOCK = ['SZ000001']
+    STOCK = ['SZ000002']
     
     
     # File path
     TICKDATAPATH = './ASHR/DATA/Test/Test_Tick/%s/%s/%s.csv'
     SECONDDATAPATH = './ASHR/DATA/Test/Test_Second/%s/%s/%s_%s.csv'
     PROCESSEDFOLDERPATH = './ASHR/DATA/Processed/%s/'
-    PROCESSEDDATAPATH = './ASHR/DATA/%s/%s.csv'
+    PROCESSEDDATAPATH = './ASHR/DATA/Processed/%s/%s.csv'
     STOCKINDUSTRYMAPPATH = './ASHR/DATA/StockIndustryIndex.csv'
     STOCKLISTPATH = './ASHR/DATA/Index/Index/csi_all.xls'
     INDEXDATAPATH = './ASHR/DATA/%s/%s.csv'
@@ -36,17 +36,19 @@ class CONFIG(object):
     M1_3 = 48000    
     
     # Feature config
-    TRADINGSTARTDATE = datetime.date(2014, 12, 31)
-    TRADINGENDDATE = datetime.date(2014, 12, 31)
+    TRADINGSTARTDATE = datetime.date(2014, 12, 1)
+    TRADINGENDDATE = datetime.date(2015, 10, 31)
     MASTERCLOCKSCALE = '3s'
         
     # Daily Stock Data for a single Stock
-    DAILYDATAFRAME = pd.DataFrame(columns = ['EndOfDayPendingBuyRatio', 'TotalAmount', 'Open', 'Close', 'High', 'Low', 
+    FEATURES = ['EndOfDayPendingBuyRatio', 'TotalAmount', 'Open', 'Close', 'High', 'Low', 
         'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2', 'PriceCurvature2', 
         'PriceSlope3', 'PriceCurvature3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
         'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
-        'AmountSlope3', 'AmountCurvature3', 'IntegratedDiff1', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2', 
-        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'Return1', 'Return2'])
+        'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2', 
+        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2',
+        'SidedAmount3', 'Return1', 'Return2']
+    DAILYDATAFRAME = pd.DataFrame(columns = FEATURES)
 
 
 
@@ -65,3 +67,14 @@ class CONFIG(object):
 
     # Stock Industry Index Map
     STOCKINDUSTRYINDEXMAP = pd.read_csv(STOCKINDUSTRYMAPPATH, index_col = 'Ticker')
+    
+    ###################
+    # Strategy Config #
+    ###################
+    
+    STRATEGY1_TRADINGHORIZON = 5
+    STRATEGY1_STOPLOSSTHRESH = 0.1
+    STRATEGY1_MAXPROFITTHRESH = 0.1
+    STRATEGY1_SELLTHRESH = 0.01
+    
+    STRATEGY2_TRADINGHORIZON = 1
