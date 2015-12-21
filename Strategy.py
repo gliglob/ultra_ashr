@@ -6,7 +6,7 @@ from SetUp import *
 from HelperFunctions import *
 from Config import CONFIG
 
-def Strategy1(Stock, EnterDate, EnterPrice, TradingHorizon = 5, StopLossThresh = 0.1, MaxProfitThresh = 0.1, SellThresh = 0.01):
+def Strategy1(Stock, EnterDate, EnterPrice, TradingHorizon, StopLossThresh, MaxProfitThresh, SellThresh):
     """
     Strategy1:
         Enter position: Open price on enter_date
@@ -78,7 +78,7 @@ def Strategy1(Stock, EnterDate, EnterPrice, TradingHorizon = 5, StopLossThresh =
     return Return, ExitPosition
 
 
-def Strategy2(Stock, EnterDate, EnterPrice, TradingHorizon = 1):
+def Strategy2(Stock, EnterDate, EnterPrice, TradingHorizon):
     """
     Strategy2:
         Enter position: Open price on enter_date
