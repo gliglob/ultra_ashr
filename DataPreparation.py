@@ -88,11 +88,12 @@ for date in CONFIG.TRADINGDAYS:
     try:
         STARTTIME = time.time()  
         df = pd.read_csv(ProcessedDataPath, index_col = 'time')
+        df = df.fillna(method = 'bfill').fillna(method = 'ffill')
         df.index = TimeWrapper3(df.index)
         # Prepare daily signals
         # TODO Prepare data by session
         
-
+        
         DailyData = FeaturePreparation(df, stock, Index, DailyData)
         
         ENDTIME = time.time()
@@ -104,4 +105,4 @@ for date in CONFIG.TRADINGDAYS:
             logging.warning('Other Critical Error When Preparing Features for %s on %s'%(stock, date))
             
 
-
+DailyData.to_csv('C:/Users/zklnu66/Desktop/DailyData_SZ000002_2.csv')
