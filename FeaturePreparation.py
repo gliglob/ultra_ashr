@@ -34,7 +34,7 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     A_buyRatio = df.A_buyRatio[-1]
     B_buyRatio = df.B_buyRatio[-1]
     TotalAmount = df.amountRolling[-1]
-
+    
     # resulting df has columns: pendingBuyRatio, price, amount
     df = DropColumn(df, ['amountRolling', 'buyRatio', 'A_buyRatio', 'B_buyRatio'])
     
@@ -42,13 +42,13 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     # Return Feature #
     ##################
     
-    Return1, _ = Strategy1(Stock, Date.date(), Open, CONFIG.TRADINGHORIZON_STRATEGY1, CONFIG.STOPLOSSTHRESH, CONFIG.MAXPROFITTHRESH, CONFIG.SELLTHRESH)
-    Return2, _ = Strategy2(Stock, Date.date(), Open, CONFIG.TRADINGHORIZON_STRATEGY2)
+    Return1, _ = Strategy1(Stock, Date.date(), Open, CONFIG.STRATEGY1_TRADINGHORIZON, CONFIG.STRATEGY1_STOPLOSSTHRESH, CONFIG.STRATEGY1_MAXPROFITTHRESH, CONFIG.STRATEGY1_SELLTHRESH)
+    Return2, _ = Strategy2(Stock, Date.date(), Open, CONFIG.STRATEGY2_TRADINGHORIZON)
     
     ##############################
     # Intraday filtering feature #
     ##############################
-
+    
     # Check if there are significnat price changes that are more than 11%, if so, we will restart the filter
     LastRecord = AddBusinessDay(Date, -1)
     
@@ -57,7 +57,7 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         if RestartFilter:
             logging.warning('Stock price changes more than 11% on %s. Today Open %f, Last Trading Day Close %f. Restarting filter...'%(LastRecord, Open, DailyData.loc[LastRecord]['Close']))
     else:
-        logging.warning('Stock was closed on %s or data was missing. Restarting filter for %s...'%(LastRecord.date().strftime('%Y%m%d'), Date.date().strftime('%Y%m%d')))
+        logging.warning('Stock was closed or data was missing on %s. Restarting filter for %s...'%(LastRecord.date().strftime('%Y%m%d'), Date.date().strftime('%Y%m%d')))
         RestartFilter = True
         
     # Add industry spread column, spread = log(exp(Index.price) - exp(df.price))
@@ -84,12 +84,15 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         industryspread1_stored = LoadObject('./ASHR/DATA/FilterInstances/industryspread1.pkl')
         industryspread2_stored = LoadObject('./ASHR/DATA/FilterInstances/industryspread2.pkl')
         industryspread3_stored = LoadObject('./ASHR/DATA/FilterInstances/industryspread3.pkl')
-        integrated1_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated1.pkl')
+        sidedamount1_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount1.pkl')
+        sidedamount2_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount2.pkl')
+        sidedamount3_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount3.pkl')
+#        integrated1_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated1.pkl')
 #        integrated2_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated2.pkl')
 #        integrated3_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated3.pkl')
-        integrateddiff1_stored = LoadObject('./ASHR/DATA/FilterInstances/integrateddiff1.pkl')
-#        integrateddiff2_stored = LoadObject('./ASHR/DATA/FilterInstances/integrateddiff2.pkl')
-#        integrateddiff3_stored = LoadObject('./ASHR/DATA/FilterInstances/integrateddiff3.pkl')
+#        integrateddiff1_stored = LoadObject('./ASHR/DATA/FilterInstances/integrateddiff1.pkl')
+    #    integrateddiff2_stored = LoadObject('./ASHR/DATA/FilterInstances/integrateddiff2.pkl')
+    #    integrateddiff3_stored = LoadObject('./ASHR/DATA/FilterInstances/integrateddiff3.pkl')
     else:
         price1_stored = None
         price2_stored = None
@@ -103,12 +106,15 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         industryspread1_stored = None
         industryspread2_stored = None
         industryspread3_stored = None
-        integrated1_stored = None
+        sidedamount1_stored = None
+        sidedamount2_stored = None
+        sidedamount3_stored = None
+#        integrated1_stored = None
 #        integrated2_stored = None
 #        integrated3_stored = None
-        integrateddiff1_stored = None
-#        integrateddiff2_stored = None
-#        integrateddiff3_stored = None
+#        integrateddiff1_stored = None
+    #    integrateddiff2_stored = None
+    #    integrateddiff3_stored = None
         
     # Apply Slope Curvature Filter to Price, PendingBuyRatio, Amount
     # TODO VWAP on overnights    
@@ -127,25 +133,28 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     df['IndustrySpreadSlope1'], df['IndustrySpreadCurvature1'], industryspread1 = SlopeCurvatureConstruction('IndustrySpread1', df['industryspread'], CONFIG.M1_1, industryspread1_stored)
     df['IndustrySpreadSlope2'], df['IndustrySpreadCurvature2'], industryspread2 = SlopeCurvatureConstruction('IndustrySpread2', df['industryspread'], CONFIG.M1_2, industryspread2_stored)
     df['IndustrySpreadSlope3'], df['IndustrySpreadCurvature3'], industryspread3 = SlopeCurvatureConstruction('IndustrySpread3', df['industryspread'], CONFIG.M1_3, industryspread3_stored)
-
+    
+    df['SidedAmount1'], sidedamount1 = PolyEmaConstruction('SidedAmount1', df['sidedAmount'], CONFIG.M1_1, sidedamount1_stored)
+    df['SidedAmount2'], sidedamount2 = PolyEmaConstruction('SidedAmount2', df['sidedAmount'], CONFIG.M1_2, sidedamount2_stored)
+    df['SidedAmount3'], sidedamount3 = PolyEmaConstruction('SidedAmount3', df['sidedAmount'], CONFIG.M1_3, sidedamount3_stored)
+    
     # Apply Integrated Differencer Filter to Price, then take difference Integrated Price - Price and run Polyema filter
     # Note, we need to advance the difference series and add the delays back
-    df['Integrated1'], integrated1 = IntegratedDifferencerConstruction('Integrated1', df['price'], CONFIG.M1_1, integrated1_stored)
-    # TODO check level of integrated diff using larger M1
-#    df['Integrated2'], integrated2 = IntegratedDifferencerConstruction('Integrated2', df['price'], CONFIG.M1_2, integrated2_stored)
-#    df['Integrated3'], integrated3 = IntegratedDifferencerConstruction('Integrated3', df['price'], CONFIG.M1_3, integrated3_stored)
-    DifferenceSeries1 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_1].tolist(), df['Integrated1'][CONFIG.M1_1:].tolist())] + [0] * CONFIG.M1_1
-#    DifferenceSeries2 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_2].tolist(), df['Integrated1'][CONFIG.M1_2:].tolist())] + [0] * CONFIG.M1_2
-#    DifferenceSeries3 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_3].tolist(), df['Integrated1'][CONFIG.M1_3:].tolist())] + [0] * CONFIG.M1_3
+#    df['Integrated1'], integrated1 = IntegratedDifferencerConstruction('Integrated1', df['price'], CONFIG.M1_1, integrated1_stored)
+    #df['Integrated2'], integrated2 = IntegratedDifferencerConstruction('Integrated2', df['price'], CONFIG.M1_2, integrated2_stored)
+    #df['Integrated3'], integrated3 = IntegratedDifferencerConstruction('Integrated3', df['price'], CONFIG.M1_3, integrated3_stored)
+#    DifferenceSeries1 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_1].tolist(), df['Integrated1'][CONFIG.M1_1:].tolist())] + [0] * CONFIG.M1_1
+    #DifferenceSeries2 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_2].tolist(), df['Integrated2'][CONFIG.M1_2:].tolist())] + [0] * CONFIG.M1_2
+    #DifferenceSeries3 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_3].tolist(), df['Integrated3'][CONFIG.M1_3:].tolist())] + [0] * CONFIG.M1_3
     
-    df['IntegratedDiff1'], integrateddiff1 = PolyEmaConstruction('IntegratedDiff1', DifferenceSeries1, CONFIG.M1_1,  integrateddiff1_stored)
-#    df['IntegratedDiff2'], integrateddiff2 = PolyEmaConstruction('IntegratedDiff2', DifferenceSeries2, CONFIG.M1_2,  integrateddiff2_stored)
-#    df['IntegratedDiff3'], integrateddiff3 = PolyEmaConstruction('IntegratedDiff3', DifferenceSeries3, CONFIG.M1_3,  integrateddiff3_stored)
-
+#    df['IntegratedDiff1'], integrateddiff1 = PolyEmaConstruction('IntegratedDiff1', DifferenceSeries1, CONFIG.M1_1,  integrateddiff1_stored)
+    #df['IntegratedDiff2'], integrateddiff2 = PolyEmaConstruction('IntegratedDiff2', DifferenceSeries2, CONFIG.M1_2,  integrateddiff2_stored)
+    #df['IntegratedDiff3'], integrateddiff3 = PolyEmaConstruction('IntegratedDiff3', DifferenceSeries3, CONFIG.M1_3,  integrateddiff3_stored)
+    
     for item in [('price1', price1), ('price2', price2), ('price3', price3), ('pendingbuy1', pendingbuy1), \
         ('pendingbuy2', pendingbuy2), ('pendingbuy3', pendingbuy3), ('amount1', amount1), ('amount2', amount2), ('amount3', amount3), \
-        ('integrated1', integrated1), ('integrateddiff1', integrateddiff1), ('industryspread1', industryspread1), \
-        ('industryspread2', industryspread2), ('industryspread3', industryspread3)]:
+        ('industryspread1', industryspread1), ('industryspread2', industryspread2), ('industryspread3', industryspread3), \
+        ('sidedamount1', sidedamount1), ('sidedamount2', sidedamount2), ('sidedamount3', sidedamount3)]:
         SaveObject(item[1], './ASHR/DATA/FilterInstances/%s.pkl'%item[0])
     
     
@@ -155,8 +164,7 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         df.iloc[-1][['PriceSlope1', 'PriceCurvature1', 'PriceSlope2', 'PriceCurvature2', 
         'PriceSlope3', 'PriceCurvature3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
         'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
-        'AmountSlope3', 'AmountCurvature3', 'IntegratedDiff1', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustrySpreadSlope2', \
-        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3']].tolist() + [Return1, Return2]
+        'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustrySpreadSlope2', \
+        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']].tolist() + [Return1, Return2]
         
-
     return DailyData
