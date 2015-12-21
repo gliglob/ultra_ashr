@@ -38,20 +38,30 @@ def TickDataProcessing(df):
     df['A_buyRatio'] = (df['A_buyRollingSum'] - df['A_sellRollingSum']) / (df['A_buyRollingSum'] + df['A_sellRollingSum'])
     df['B_buyRatio'] = (df['B_buyRollingSum'] - df['B_sellRollingSum']) / (df['B_buyRollingSum'] + df['B_sellRollingSum'])
     df = df.replace([-np.inf, np.inf], np.nan)
-    df = DropColumn(df, ['A_buyRollingSum', 'A_sellRollingSum', 'B_buyRollingSum', 'B_sellRollingSum', 'buyRollingSum', 'sellRollingSum', 'volumeRolling', 'side', 'volume', 'orderType'])
+        
+    df['sidedAmount'] = df['amount']
+    df['sidedAmount'][df['side'] == 'S'] = -df['amount']
+    df['sidedAmountRolling'] = df['sidedAmount'].cumsum()
     
-    # Take log of price, amount
-    df[['price', 'amount', 'amountRolling']] = np.log(df[['price', 'amount', 'amountRolling']])    
-   
-    ################################################################
-    # Note, Price, Amount, Volume Columns Are All On the Log Scale #
-    ################################################################
-#    df = df.rename(columns = {'price': 'logPrice', 'amount' : 'logAmount', 'amountRolling': 'LogAmountRolling', 'volumeRolling' : 'LogVolumeRolling'})
+    
+    df = DropColumn(df, ['A_buyRollingSum', 'A_sellRollingSum', 'B_buyRollingSum', 'B_sellRollingSum', 'buyRollingSum', 'sellRollingSum', 'volumeRolling', 'side', 'volume', 'orderType'])
     
     # Asof join by MasterClock
     df = df.set_index('time')
-    df = df.apply(lambda x: x.asof(CONFIG.INTRADAYMASTERCLOCK.MasterClock))
+    df = df.apply(lambda x: x.asof(CONFIG.INTRADAYMASTERCLOCK.MasterClock))    
     
+    df['sidedAmount'].iloc[1:] = df['sidedAmountRolling'].diff()
+    df['amount'].iloc[1:] = df['amountRolling'].diff()    
+    
+    ################################################################
+    # Note, Price, Amount, Volume Columns Are All On the Log Scale #
+    ################################################################
+    #    df = df.rename(columns = {'price': 'logPrice', 'amount' : 'logAmount', 'amountRolling': 'LogAmountRolling', 'volumeRolling' : 'LogVolumeRolling'})
+    
+    # Take log of price, amount
+    for col in ['price', 'amount', 'amountRolling', 'sidedAmount', 'sidedAmountRolling']:
+        df[col] = np.log(abs(df[col])) * (df[col] / abs(df[col]))
+   
     return df
     
 def SecondDataProcessing(df):
