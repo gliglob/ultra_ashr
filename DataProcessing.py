@@ -42,8 +42,10 @@ def TickDataProcessing(df):
     df['sidedAmount'] = df['amount']
     df['sidedAmount'][df['side'] == 'S'] = -df['amount']
     df['sidedAmountRolling'] = df['sidedAmount'].cumsum()
-    
-    
+        
+    if pd.isnull(df.A_buyRatio.iloc[-1]):
+        df.A_buyRatio = 0
+        
     df = DropColumn(df, ['A_buyRollingSum', 'A_sellRollingSum', 'B_buyRollingSum', 'B_sellRollingSum', 'buyRollingSum', 'sellRollingSum', 'volumeRolling', 'side', 'volume', 'orderType'])
     
     # Asof join by MasterClock
@@ -60,7 +62,7 @@ def TickDataProcessing(df):
     
     # Take log of price, amount
     for col in ['price', 'amount', 'amountRolling', 'sidedAmount', 'sidedAmountRolling']:
-        df[col] = np.log(abs(df[col])) * (df[col] / abs(df[col]))
+        df[col][df[col] !=0] = np.log(abs(df[col])) * (df[col] / abs(df[col]))
    
     return df
     
