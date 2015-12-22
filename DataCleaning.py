@@ -27,7 +27,7 @@ def SecondDataCleaning(df):
     Note, Since we are doing As-Of join on Second Data, restricting to trading hour is not necessary
     """
     
-    df = DropNaData(df)
+    df = DropNaData(df, ['price', 'volume'])
     df = DropColumn(df, ['count', 'amount', 'volume', 'side', 'buy1', 'buy2', 'buy3', 'buy4', 'buy5', 'sell1', 'sell2', 'sell3', 'sell4', 'sell5'])
     df['time'] = TimeWrapper3(df['time'])
 
