@@ -5,7 +5,7 @@ Feature Preparation -- Prepare Daily Feature for each session
 
 from HelperFunctions import *
 from SlopeCurvatureConstruction import SlopeCurvatureConstruction
-from IntegratedDifferencerConstruction import IntegratedDifferencerConstruction
+#from IntegratedDifferencerConstruction import IntegratedDifferencerConstruction
 from PolyEmaConstruction import PolyEmaConstruction
 from Strategy import *
 from Config import CONFIG
