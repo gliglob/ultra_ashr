@@ -5,17 +5,18 @@ Supervised Leaerning Preparation
 from sklearn.cross_validation import train_test_split
 from sklearn.decomposition import RandomizedPCA
 import pandas as pd
+import numpy as np
 from Config import CONFIG
 
 
-stock = 'SZ000002'
+stock = 'SZ000001'
 df = pd.read_csv('C:/Users/zklnu66/Desktop/DailyData_%s.csv'%stock, index_col = 0)
 df.index.name = 'Time'
 BacktestFeatures = ['EndOfDayPendingBuyRatio', 'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2', 'PriceCurvature2', 
         'PriceSlope3', 'PriceCurvature3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
         'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
         'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2', 
-        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3']
+        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']
 
 TargetFeature = 'Return2'
 TradingHorizon = 1
@@ -28,16 +29,58 @@ Target = df[TargetFeature].shift(-TradingHorizon)[:-TradingHorizon].as_matrix()
 X_train, X_test, Y_train, Y_test = train_test_split(Dependent, Target, test_size = TestSize, random_state = RandomState)
 
 # Randomized PCA
-n_components = 10
+n_components = 3
 pca = RandomizedPCA(n_components=n_components, whiten=True).fit(X_train)
 X_train_pca = pca.transform(X_train)
 X_test_pca = pca.transform(X_test)
 
-
+# Ridge
 from LinearModel import Ridge
 param_grid = {'alpha' : [0.1, 1, 10]}
 clf = Ridge(X_train_pca, Y_train, param_grid)
 
+# Lasso
+from LinearModel import Lasso
+alpha = 0.01
+clf = Lasso(alpha = alpha)
+clf.fit(X_train_pca, Y_train)
+Y_pred_lasso = clf.predict(X_test_pca)
+from sklearn.metrics import r2_score
+r2_score_lasso = r2_score(Y_test, Y_pred_lasso)
+
+from sklearn.linear_model import LassoLarsCV
+clf = LassoLarsCV(cv = 10)
+clf.fit(X_train, Y_train)
+
+#### Kernal Ridge vs SVR
+from sklearn.svm import SVR
+from sklearn.grid_search import GridSearchCV
+from sklearn.kernel_ridge import KernelRidge
+param_grid_svr = {"C": [1e0, 1e1, 1e2, 1e3, 1e4, 1e5], "gamma": np.logspace(-5, 5, 10)}
+param_grid_kr = {"alpha": [1e0, 1e-1, 1e-2, 1e-3], "gamma": np.logspace(-2, 2, 5)}
+svr = GridSearchCV(SVR(kernel = 'rbf'), cv = 5, param_grid = param_grid_svr)
+kr = GridSearchCV(KernelRidge(kernel = 'rbf'), cv = 5, param_grid = param_grid_kr)
+svr.fit(X_train_pca, Y_train)
+kr.fit(X_train_pca, Y_train)
+y_svr = svr.predict(X_test_pca)
+y_kr = kr.predict(X_test_pca)
+
+
+from sklearn.svm import SVC
+cutoff = 0.04
+param_grid_svc = {"C": [1e0, 1e1, 1e2, 1e3, 1e4, 1e5], "gamma": np.logspace(-5, 5, 10)}
+svc = GridSearchCV(SVC(kernel = 'rbf'), cv = 5, param_grid = param_grid_svr))
+Y_train01 = [1 if i > cutoff else 0 for i in Y_train]
+Y_test01 = [1 if i > cutoff else 0 for i in Y_test]
+svc.fit(X_train, Y_train01)
+svc.score(X_test, Y_test01)
+
+"""
+Visualize learning curve
+"""
+from sklearn.learning_curve import learning_curve
+train_sizes_svr, train_scores_svr, test_scores_svr = learning_curve(svr, X_train_pca, Y_train, train_sizes = np.linspace(0.1, 1, 10), cv = 10, scoring = 'mean_squared_error')
+train_sizes_kr, train_scores_kr, test_scores_kr = learning_curve(kr, X_train_pca, Y_train, train_sizes = np.linspace(0.1, 1, 10), cv = 10, scoring = 'mean_squared_error')
 
 
 """
