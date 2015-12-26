@@ -28,6 +28,7 @@ Target = df[TargetFeature].shift(-TradingHorizon)[:-TradingHorizon].as_matrix()
 
 X_train, X_test, Y_train, Y_test = train_test_split(Dependent, Target, test_size = TestSize, random_state = RandomState)
 
+
 # Randomized PCA
 n_components = 3
 pca = RandomizedPCA(n_components=n_components, whiten=True).fit(X_train)
@@ -82,6 +83,22 @@ from sklearn.learning_curve import learning_curve
 train_sizes_svr, train_scores_svr, test_scores_svr = learning_curve(svr, X_train_pca, Y_train, train_sizes = np.linspace(0.1, 1, 10), cv = 10, scoring = 'mean_squared_error')
 train_sizes_kr, train_scores_kr, test_scores_kr = learning_curve(kr, X_train_pca, Y_train, train_sizes = np.linspace(0.1, 1, 10), cv = 10, scoring = 'mean_squared_error')
 
+"""
+Feature selection
+"""
+from sklearn.feature_selection import SelectKBest 
+from sklearn.feature_selection import f_regression
+selection = SelectKBest(f_regression, k = 15)
+X_train_selected = selection.fit_transform(X_train, Y_train)
+X_test_selected = selection.transform(X_test)
+# kept features
+[BacktestFeatures[i] for i in selection.get_support(indices = True)]
+
+#### Pairwise correlation
+for feature in BacktestFeatures:
+    pair_df = df[[feature, TargetFeature]]
+    # pearson    
+    pair_df.corr()
 
 """
 Correlation Analysis
@@ -103,3 +120,24 @@ from matplotlib import pyplot as plt
 import linkage.graphs as linkage_graphs
 fig, axes = plt.subplots(1, 1)
 linkage_graphs.plot_correlation_matrix(corr_matrix_ordered, colnames_ordered, col_order=None, ax=axes)
+
+"""
+Compute correlation between X and Y
+"""
+
+def RobustPairwiseCorrelation(pair_df):
+    import numpy as np
+    import statistics.robust_estimation as robust_estimation
+    
+    P                 = pair_df.as_matrix()
+    nu_v              = robust_estimation.multi_uvtfit(P)
+    nu_select         = robust_estimation.shape_selection(nu_v)
+    mu, Sigma, _      = robust_estimation.robust_st_est(nu_select, P)
+            
+    # get robust corelation coefficient
+    robust_Cov        = nu_select / (nu_select - 2) * Sigma
+    s                 = robust_Cov.diagonal()
+    S                 = np.sqrt(np.outer(s, s))
+    robust_Corr       = robust_Cov / S
+    robust_rho        = robust_Corr[0][1]
+    return robust_rho
