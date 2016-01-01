@@ -75,6 +75,9 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         price1_stored = LoadObject('./ASHR/DATA/FilterInstances/price1.pkl')
         price2_stored = LoadObject('./ASHR/DATA/FilterInstances/price2.pkl')
         price3_stored = LoadObject('./ASHR/DATA/FilterInstances/price3.pkl')
+        pricepema1_stored = LoadObject('./ASHR/DATA/FilterInstances/pricepema1.pkl')
+        pricepema2_stored = LoadObject('./ASHR/DATA/FilterInstances/pricepema2.pkl')
+        pricepema3_stored = LoadObject('./ASHR/DATA/FilterInstances/pricepema3.pkl')
         pendingbuy1_stored = LoadObject('./ASHR/DATA/FilterInstances/pendingbuy1.pkl')
         pendingbuy2_stored = LoadObject('./ASHR/DATA/FilterInstances/pendingbuy2.pkl')
         pendingbuy3_stored = LoadObject('./ASHR/DATA/FilterInstances/pendingbuy3.pkl')
@@ -97,6 +100,9 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         price1_stored = None
         price2_stored = None
         price3_stored = None
+        pricepema1_stored = None
+        pricepema2_stored = None
+        pricepema3_stored = None
         pendingbuy1_stored = None
         pendingbuy2_stored = None
         pendingbuy3_stored = None
@@ -121,7 +127,11 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     df['PriceSlope1'], df['PriceCurvature1'], price1 = SlopeCurvatureConstruction('Price1', df['price'], CONFIG.M1_1, price1_stored)
     df['PriceSlope2'], df['PriceCurvature2'], price2 = SlopeCurvatureConstruction('Price2', df['price'], CONFIG.M1_2, price2_stored)
     df['PriceSlope3'], df['PriceCurvature3'], price3 = SlopeCurvatureConstruction('Price3', df['price'], CONFIG.M1_3, price3_stored)
-    
+
+    df['PricePema1'], pricepema1 = PolyEmaConstruction('PricePema1', df['price'], CONFIG.M1_1, pricepema1_stored) 
+    df['PricePema2'], pricepema2 = PolyEmaConstruction('PricePema2', df['price'], CONFIG.M1_2, pricepema2_stored) 
+    df['PricePema3'], pricepema3 = PolyEmaConstruction('PricePema3', df['price'], CONFIG.M1_3, pricepema3_stored) 
+
     df['PendingBuySlope1'], df['PendingBuyCurvature1'], pendingbuy1 = SlopeCurvatureConstruction('PendingBuy1', df['pendingBuyRatio'], CONFIG.M1_1, pendingbuy1_stored)
     df['PendingBuySlope2'], df['PendingBuyCurvature2'], pendingbuy2 = SlopeCurvatureConstruction('PendingBuy2', df['pendingBuyRatio'], CONFIG.M1_2, pendingbuy2_stored)
     df['PendingBuySlope3'], df['PendingBuyCurvature3'], pendingbuy3 = SlopeCurvatureConstruction('PendingBuy3', df['pendingBuyRatio'], CONFIG.M1_3, pendingbuy3_stored)
@@ -150,19 +160,20 @@ def FeaturePreparation(df, Stock, Index, DailyData):
 #    df['IntegratedDiff1'], integrateddiff1 = PolyEmaConstruction('IntegratedDiff1', DifferenceSeries1, CONFIG.M1_1,  integrateddiff1_stored)
     #df['IntegratedDiff2'], integrateddiff2 = PolyEmaConstruction('IntegratedDiff2', DifferenceSeries2, CONFIG.M1_2,  integrateddiff2_stored)
     #df['IntegratedDiff3'], integrateddiff3 = PolyEmaConstruction('IntegratedDiff3', DifferenceSeries3, CONFIG.M1_3,  integrateddiff3_stored)
-    
+
     for item in [('price1', price1), ('price2', price2), ('price3', price3), ('pendingbuy1', pendingbuy1), \
-        ('pendingbuy2', pendingbuy2), ('pendingbuy3', pendingbuy3), ('amount1', amount1), ('amount2', amount2), ('amount3', amount3), \
-        ('industryspread1', industryspread1), ('industryspread2', industryspread2), ('industryspread3', industryspread3), \
-        ('sidedamount1', sidedamount1), ('sidedamount2', sidedamount2), ('sidedamount3', sidedamount3)]:
+            ('pendingbuy2', pendingbuy2), ('pendingbuy3', pendingbuy3), ('amount1', amount1), ('amount2', amount2), ('amount3', amount3), \
+                ('industryspread1', industryspread1), ('industryspread2', industryspread2), ('industryspread3', industryspread3), \
+                    ('sidedamount1', sidedamount1), ('sidedamount2', sidedamount2), ('sidedamount3', sidedamount3), ('pricepema1', pricepema1), \
+                        ('pricepema2', pricepema2), ('pricepema3', pricepema3)]:
         SaveObject(item[1], './ASHR/DATA/FilterInstances/%s.pkl'%item[0])
-    
+
     
     # Select Last Data Point
     # TODO different starting point for downsampling
     DailyData.loc[Date] = [EndOfDayPendingBuyRatio, TotalAmount, Open, Close, High, Low, BuyRatio, A_buyRatio, B_buyRatio] + \
         df.iloc[-1][['PriceSlope1', 'PriceCurvature1', 'PriceSlope2', 'PriceCurvature2', 
-        'PriceSlope3', 'PriceCurvature3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
+        'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
         'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
         'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustrySpreadSlope2', \
         'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']].tolist() + [Return1, Return2]
