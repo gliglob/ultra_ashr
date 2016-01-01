@@ -90,6 +90,12 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         sidedamount1_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount1.pkl')
         sidedamount2_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount2.pkl')
         sidedamount3_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount3.pkl')
+        uptick1_stored = LoadObject('./ASHR/DATA/FilterInstances/uptick1.pkl')
+        uptick2_stored = LoadObject('./ASHR/DATA/FilterInstances/uptick2.pkl')
+        uptick3_stored = LoadObject('./ASHR/DATA/FilterInstances/uptick3.pkl')
+        downtick1_stored = LoadObject('./ASHR/DATA/FilterInstances/downtick1.pkl')
+        downtick2_stored = LoadObject('./ASHR/DATA/FilterInstances/downtick2.pkl')
+        downtick3_stored = LoadObject('./ASHR/DATA/FilterInstances/downtick3.pkl')
 #        integrated1_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated1.pkl')
 #        integrated2_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated2.pkl')
 #        integrated3_stored = LoadObject('./ASHR/DATA/FilterInstances/integrated3.pkl')
@@ -115,6 +121,12 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         sidedamount1_stored = None
         sidedamount2_stored = None
         sidedamount3_stored = None
+        uptick1_stored = None
+        uptick2_stored = None
+        uptick3_stored = None
+        downtick1_stored = None
+        downtick2_stored = None
+        downtick3_stored = None
 #        integrated1_stored = None
 #        integrated2_stored = None
 #        integrated3_stored = None
@@ -150,24 +162,43 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     
     # Apply Integrated Differencer Filter to Price, then take difference Integrated Price - Price and run Polyema filter
     # Note, we need to advance the difference series and add the delays back
-#    df['Integrated1'], integrated1 = IntegratedDifferencerConstruction('Integrated1', df['price'], CONFIG.M1_1, integrated1_stored)
+    #df['Integrated1'], integrated1 = IntegratedDifferencerConstruction('Integrated1', df['price'], CONFIG.M1_1, integrated1_stored)
     #df['Integrated2'], integrated2 = IntegratedDifferencerConstruction('Integrated2', df['price'], CONFIG.M1_2, integrated2_stored)
     #df['Integrated3'], integrated3 = IntegratedDifferencerConstruction('Integrated3', df['price'], CONFIG.M1_3, integrated3_stored)
-#    DifferenceSeries1 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_1].tolist(), df['Integrated1'][CONFIG.M1_1:].tolist())] + [0] * CONFIG.M1_1
+    #DifferenceSeries1 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_1].tolist(), df['Integrated1'][CONFIG.M1_1:].tolist())] + [0] * CONFIG.M1_1
     #DifferenceSeries2 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_2].tolist(), df['Integrated2'][CONFIG.M1_2:].tolist())] + [0] * CONFIG.M1_2
     #DifferenceSeries3 = [x-y for x,y in zip(df['price'][:len(df)-CONFIG.M1_3].tolist(), df['Integrated3'][CONFIG.M1_3:].tolist())] + [0] * CONFIG.M1_3
     
-#    df['IntegratedDiff1'], integrateddiff1 = PolyEmaConstruction('IntegratedDiff1', DifferenceSeries1, CONFIG.M1_1,  integrateddiff1_stored)
+    #df['IntegratedDiff1'], integrateddiff1 = PolyEmaConstruction('IntegratedDiff1', DifferenceSeries1, CONFIG.M1_1,  integrateddiff1_stored)
     #df['IntegratedDiff2'], integrateddiff2 = PolyEmaConstruction('IntegratedDiff2', DifferenceSeries2, CONFIG.M1_2,  integrateddiff2_stored)
     #df['IntegratedDiff3'], integrateddiff3 = PolyEmaConstruction('IntegratedDiff3', DifferenceSeries3, CONFIG.M1_3,  integrateddiff3_stored)
 
+    #######
+    # RSI #
+    #######
+    df['UpTick'] = 0
+    df['DownTick'] = 0
+    PriceDiff = df['price'].diff(periods = 1)
+    df['UpTick'][PriceDiff > 0] = PriceDiff
+    df['DownTick'][PriceDiff < 0] = PriceDiff
+    df['UpTick1'], uptick1 = PolyEmaConstruction('UpTick1', df['UpTick'], CONFIG.M1_1, uptick1_stored)
+    df['UpTick2'], uptick2 = PolyEmaConstruction('UpTick2', df['UpTick'], CONFIG.M1_2, uptick2_stored)
+    df['UpTick3'], uptick3 = PolyEmaConstruction('UpTick3', df['UpTick'], CONFIG.M1_3, uptick3_stored)
+    df['DownTick1'], downtick1 = PolyEmaConstruction('DownTick1', df['DownTick'], CONFIG.M1_1, downtick1_stored)
+    df['DownTick2'], downtick2 = PolyEmaConstruction('DownTick2', df['DownTick'], CONFIG.M1_2, downtick2_stored)
+    df['DownTick3'], downtick3 = PolyEmaConstruction('DownTick3', df['DownTick'], CONFIG.M1_3, downtick3_stored)
+
     for item in [('price1', price1), ('price2', price2), ('price3', price3), ('pendingbuy1', pendingbuy1), \
-            ('pendingbuy2', pendingbuy2), ('pendingbuy3', pendingbuy3), ('amount1', amount1), ('amount2', amount2), ('amount3', amount3), \
-                ('industryspread1', industryspread1), ('industryspread2', industryspread2), ('industryspread3', industryspread3), \
-                    ('sidedamount1', sidedamount1), ('sidedamount2', sidedamount2), ('sidedamount3', sidedamount3), ('pricepema1', pricepema1), \
-                        ('pricepema2', pricepema2), ('pricepema3', pricepema3)]:
+        ('pendingbuy2', pendingbuy2), ('pendingbuy3', pendingbuy3), ('amount1', amount1), ('amount2', amount2), ('amount3', amount3), \
+        ('industryspread1', industryspread1), ('industryspread2', industryspread2), ('industryspread3', industryspread3), \
+        ('sidedamount1', sidedamount1), ('sidedamount2', sidedamount2), ('sidedamount3', sidedamount3), ('pricepema1', pricepema1), \
+        ('pricepema2', pricepema2), ('pricepema3', pricepema3), ('uptick1', uptick1), ('uptick2', uptick2), ('uptick3', uptick3), \
+        ('downtick1', downtick1), ('downtick2', downtick2), ('downtick3', downtick3)]:
         SaveObject(item[1], './ASHR/DATA/FilterInstances/%s.pkl'%item[0])
 
+    RSI1 = 1 - 1 / (1 + (df['UpTick1'].iloc[-1] / df['DownTick1'].iloc[-1])) if df['DownTick1'].iloc[-1] != 0 else 1
+    RSI2 = 1 - 1 / (1 + (df['UpTick2'].iloc[-1] / df['DownTick2'].iloc[-1])) if df['DownTick2'].iloc[-1] != 0 else 1
+    RSI3 = 1 - 1 / (1 + (df['UpTick3'].iloc[-1] / df['DownTick3'].iloc[-1])) if df['DownTick3'].iloc[-1] != 0 else 1    
     
     # Select Last Data Point
     # TODO different starting point for downsampling
@@ -176,6 +207,6 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
         'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
         'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustrySpreadSlope2', \
-        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']].tolist() + [Return1, Return2]
+        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']].tolist() + [RSI1, RSI2, RSI3, Return1, Return2]
         
     return DailyData
