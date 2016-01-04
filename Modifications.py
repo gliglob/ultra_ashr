@@ -1,12 +1,12 @@
 """
 Modification 1:
-    Set all data files under Processed Data folder, 
+    Change the first row of the processed data, column sidedAmount and amount to match sidedAmountRolling and amountRolling
 """
 
 from Config import CONFIG
 from SetUp import *
 
-for stock in CONFIG.STOCK:
+for stock in STOCK:
     
     
     #########################
@@ -37,3 +37,15 @@ for stock in CONFIG.STOCK:
                     else:
                         logging.warning('Other Critical Error When Reading Data of %s on %s'%(stock, date))
 
+"""
+Modification 2:
+    Add the volume column from raw tick data to prepare the VWAP
+"""
+
+for stock in STOCK:
+    #########################
+    # Read and Process Data #
+    #########################
+    
+    logging.warning('Reading Data Start... For Stock %s From %s To %s...'%(stock, CONFIG.TRADINGDAYS[0], CONFIG.TRADINGDAYS[-1]))
+    
