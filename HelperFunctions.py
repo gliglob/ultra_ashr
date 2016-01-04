@@ -230,4 +230,43 @@ def LoadObject(Path):
     with open(Path, 'rb') as input:
         Object = pickle.load(input)
     return Object
+
+def SortAndZip(FeatureList, ScoreList, Zip = False):
+    """
+    Sort ScoreList and Zip FeatureList and ScoreList if Zip is set to True
+    Input:
+        /FeatureList/ List of feature names
+        /ScoreList/ List of corresponding scores
+    Output:
+        If Zip == True:
+            /ZipList/ List of tuple [(Sorted Feature, Sorted Score)]
+        If Zip == False:
+            /[SortedFeatureList, SortedScoreList]/
+    """
+    SortedScoreList, SortedFeatureList = zip(*sorted(zip(ScoreList, FeatureList)))
+    return [SortedFeatureList, SortedScoreList] if not Zip else zip(SortedFeatureList, SortedScoreList)
     
+
+def RobustPairwiseCorrelation(pair_df):
+    """
+    Compute correlation between X and Y
+    Input:
+        /pair_df/ column X and column Y
+    Output:
+        /correlation/
+    """
+    import numpy as np
+    import statistics.robust_estimation as robust_estimation
+    
+    P                 = pair_df.as_matrix()
+    nu_v              = robust_estimation.multi_uvtfit(P)
+    nu_select         = robust_estimation.shape_selection(nu_v)
+    mu, Sigma, _      = robust_estimation.robust_st_est(nu_select, P)
+            
+    # get robust corelation coefficient
+    robust_Cov        = nu_select / (nu_select - 2) * Sigma
+    s                 = robust_Cov.diagonal()
+    S                 = np.sqrt(np.outer(s, s))
+    robust_Corr       = robust_Cov / S
+    robust_rho        = robust_Corr[0][1]
+    return robust_rho
