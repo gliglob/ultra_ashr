@@ -7,21 +7,26 @@ from sklearn.decomposition import RandomizedPCA
 import pandas as pd
 import numpy as np
 from Config import CONFIG
-
+from HelperFunctions import *
 
 stock = 'SZ000001'
-df = pd.read_csv('C:/Users/zklnu66/Desktop/DailyData_%s.csv'%stock, index_col = 0)
+df = pd.read_csv('C:/Users/zklnu66/Desktop/DailyData%s.csv'%stock, index_col = 0)
 df.index.name = 'Time'
-BacktestFeatures = ['EndOfDayPendingBuyRatio', 'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2', 'PriceCurvature2', 
-        'PriceSlope3', 'PriceCurvature3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
-        'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
-        'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2', 
-        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']
+BacktestFeatures = ['EndOfDayPendingBuyRatio', 'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2',
+    'PriceCurvature2', 'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3',
+    'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 'PendingBuySlope3',
+    'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2',
+    'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2',
+    'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2',
+    'SidedAmount3', 'RSI1', 'RSI2', 'RSI3', 'WilliamR_1', 'WilliamR_2', 'WilliamR_3',
+    'InverseWilliamR_1', 'InverseWilliamR_2', 'InverseWilliamR_3', 'Disparity1', 'Disparity2', 'Disparity3',
+    'Disparity12', 'Disparity13', 'Disparity23', 'BuyRatio2', 'BuyRatio3', 'A_buyRatio2', 'A_buyRatio3',
+    'B_buyRatio2', 'B_buyRatio3', 'EndOfDayPendingBuyRatio2', 'EndOfDayPendingBuyRatio3']
 
 TargetFeature = 'Return2'
 TradingHorizon = 1
 TestSize = 0.2
-RandomState = None
+RandomState = 42
 
 Dependent = df[BacktestFeatures][:-TradingHorizon].as_matrix()
 Target = df[TargetFeature].shift(-TradingHorizon)[:-TradingHorizon].as_matrix()
@@ -30,7 +35,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(Dependent, Target, test_size
 
 
 # Randomized PCA
-n_components = 3
+n_components = 10
 pca = RandomizedPCA(n_components=n_components, whiten=True).fit(X_train)
 X_train_pca = pca.transform(X_train)
 X_test_pca = pca.transform(X_test)
@@ -94,11 +99,18 @@ X_test_selected = selection.transform(X_test)
 # kept features
 [BacktestFeatures[i] for i in selection.get_support(indices = True)]
 
+
+
 #### Pairwise correlation
+CorrelationList = []
 for feature in BacktestFeatures:
-    pair_df = df[[feature, TargetFeature]]
-    # pearson    
-    pair_df.corr()
+    pair_df = pd.DataFrame({'Feature': X_train[:, BacktestFeatures.index(feature)], 'Target': Y_train})
+#    # pearson    
+#    CorrelationList.append(abs(pair_df.corr().iloc[0][1]))
+    # robust
+    CorrelationList.append(abs(RobustPairwiseCorrelation(pair_df)))
+
+SortAndZip(BacktestFeatures, CorrelationList, True)
 
 """
 Correlation Analysis
@@ -121,23 +133,4 @@ import linkage.graphs as linkage_graphs
 fig, axes = plt.subplots(1, 1)
 linkage_graphs.plot_correlation_matrix(corr_matrix_ordered, colnames_ordered, col_order=None, ax=axes)
 
-"""
-Compute correlation between X and Y
-"""
 
-def RobustPairwiseCorrelation(pair_df):
-    import numpy as np
-    import statistics.robust_estimation as robust_estimation
-    
-    P                 = pair_df.as_matrix()
-    nu_v              = robust_estimation.multi_uvtfit(P)
-    nu_select         = robust_estimation.shape_selection(nu_v)
-    mu, Sigma, _      = robust_estimation.robust_st_est(nu_select, P)
-            
-    # get robust corelation coefficient
-    robust_Cov        = nu_select / (nu_select - 2) * Sigma
-    s                 = robust_Cov.diagonal()
-    S                 = np.sqrt(np.outer(s, s))
-    robust_Corr       = robust_Cov / S
-    robust_rho        = robust_Corr[0][1]
-    return robust_rho
