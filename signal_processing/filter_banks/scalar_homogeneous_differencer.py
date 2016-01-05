@@ -16,7 +16,7 @@ class ScalarHomogeneousDifferencer(ScalarFilterBase):
         ScalarFilterBase.__init__(self, *args, **kwargs)
 
         # /r/ is the ratio of long- to short-arm M1 (location) values. Typically r = 3.
-        self._arm_ratio = kwargs.get('arm_ratio', 3)
+        self._arm_ratio = kwargs.get('arm_ratio', 2)
 
         # instantiate an underlying poly-ema pair
         this_order      = kwargs.get('order', 1)
