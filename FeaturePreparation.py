@@ -10,7 +10,7 @@ from PolyEmaConstruction import PolyEmaConstruction
 from Strategy import *
 from Config import CONFIG
 
-def FeaturePreparation(df, Stock, Index, DailyData):
+def FeaturePreparation(df, Stock, IndustryIndex, Index, DailyData):
     """
     Prepare the following end of day or intraday features:
     Date, EndOfDayPendingBuyRatio, Open, Close, High, Low, BuyRatio, A_buyRatio, B_buyRatio
@@ -61,15 +61,32 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         RestartFilter = True
         
     # Add industry spread column, spread = log(exp(Index.price) - exp(df.price))
-    IndexDate = Date.date().strftime('%Y%m%d')
-    IndexData = pd.read_csv(CONFIG.INDEXDATAPATH%(Index, IndexDate), header = 0, names = ['time', 'price'], index_col = 0)
-    try:
-        Spread = np.log(np.exp(IndexData.price) - np.exp(df.price))
-        df['industryspread'] = Spread.tolist()
-    except Exception:
-        logging.WARNING('Not able to take the log of the spread between stock %s and index %s for date %s. Taking the abs value instead.'%(Stock, Index, Date))
-        df['industryspread'] = np.log(abs(np.exp(IndexData.price) - np.exp(df.price))).tolist()
-        
+    c
+    try:     
+        IndexData = pd.read_csv(CONFIG.INDEXDATAPATH%(Index, IndexDate), header = 0, names = ['time', 'price'], index_col = 0)
+        IndustryIndexData = pd.read_csv(CONFIG.INDEXDATAPATH%(IndustryIndex, IndexData), header = 0, names = ['time', 'price'], index_col = 0)
+        IndexSpread = np.log(np.exp(IndexData.price) - np.exp(df.price))
+        IndustryIndexSpread = np.log(np.exp(IndustryIndexData.price) - np.exp(df.price))
+        df['indexspread'] = IndexSpread.tolist()
+        df['industryspread'] = IndustryIndexSpread.tolist()
+        if np.isnan(df['industryspread']).sum() > 0:
+            logging.WARNING('Not able to take the log of %d spreads between stock %s and index %s for date %s. Taking the abs value instead.'%(np.isnan(df['industryspread']).sum(), Stock, Index, IndexDate))
+            df['industryspread'][np.isnan(df['industryspread'])] = np.log(abs(np.exp(IndustryIndexData.price) - np.exp(df.price)))
+        if np.isnan(df['indexspread']).sum() > 0:
+            logging.WARNING('Not able to take the log of %d spreads between stock %s and index %s for date %s. Taking the abs value instead.'%(np.isnan(df['indexspread']).sum(), Stock, Index, IndexDate))
+            df['indexspread'][np.isnan(df['indexspread'])] = np.log(abs(np.exp(IndexData.price) - np.exp(df.price)))
+            
+    except Exception, e:
+        logging.warning(str(e))
+        if not os.path.isfile(CONFIG.INDEXDATAPATH%(Index, IndexDate)):
+            logging.WARNING('Index Data is missing for stock %s on %s. Setting index spread slope and curvature to 0.'%(Stock, IndexDate))
+            df['indexspread'] = 0
+        elif not os.path.isfile(CONFIG.INDEXDATAPATH%(IndustryIndex, IndexData)):
+            logging.WARNING('Industry index Data is missing for stock %s on %s. Setting industry index spread slope and curvature to 0.'%(Stock, IndexDate))
+            df['industryspread'] = 0
+        else:
+            logging.WARNING('Other critical errors occurred when computing the industry and index spread for stock %s on %s'%(Stock, IndexDate))
+            
     
     if (not DailyData.empty) and (not RestartFilter):
         price1_stored = LoadObject('./ASHR/DATA/FilterInstances/price1.pkl')
@@ -87,6 +104,9 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         industryspread1_stored = LoadObject('./ASHR/DATA/FilterInstances/industryspread1.pkl')
         industryspread2_stored = LoadObject('./ASHR/DATA/FilterInstances/industryspread2.pkl')
         industryspread3_stored = LoadObject('./ASHR/DATA/FilterInstances/industryspread3.pkl')
+        indexspread1_stored = LoadObject('./ASHR/DATA/FilterInstances/indexspread1.pkl')
+        indexspread2_stored = LoadObject('./ASHR/DATA/FilterInstances/indexspread2.pkl')
+        indexspread3_stored = LoadObject('./ASHR/DATA/FilterInstances/indexspread3.pkl')
         sidedamount1_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount1.pkl')
         sidedamount2_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount2.pkl')
         sidedamount3_stored = LoadObject('./ASHR/DATA/FilterInstances/sidedamount3.pkl')
@@ -118,6 +138,9 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         industryspread1_stored = None
         industryspread2_stored = None
         industryspread3_stored = None
+        indexspread1_stored = None
+        indexspread2_stored = None
+        indexspread3_stored = None
         sidedamount1_stored = None
         sidedamount2_stored = None
         sidedamount3_stored = None
@@ -152,9 +175,14 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     df['AmountSlope2'], df['AmountCurvature2'], amount2 = SlopeCurvatureConstruction('Amount2', df['amount'], CONFIG.M1_2, amount2_stored)
     df['AmountSlope3'], df['AmountCurvature3'], amount3 = SlopeCurvatureConstruction('Amount3', df['amount'], CONFIG.M1_3, amount3_stored)
     
-    df['IndustrySpreadSlope1'], df['IndustrySpreadCurvature1'], industryspread1 = SlopeCurvatureConstruction('IndustrySpread1', df['industryspread'], CONFIG.M1_1, industryspread1_stored)
-    df['IndustrySpreadSlope2'], df['IndustrySpreadCurvature2'], industryspread2 = SlopeCurvatureConstruction('IndustrySpread2', df['industryspread'], CONFIG.M1_2, industryspread2_stored)
-    df['IndustrySpreadSlope3'], df['IndustrySpreadCurvature3'], industryspread3 = SlopeCurvatureConstruction('IndustrySpread3', df['industryspread'], CONFIG.M1_3, industryspread3_stored)
+    if np.all(df['industryspread'] == 0):
+        df['IndustrySpreadSlope1'], df['IndustrySpreadCurvature1'], df['IndustrySpreadSlope2'], df['IndustrySpreadCurvature2'], df['IndustrySpreadSlope3'], df['IndustrySpreadCurvature3'] = [0] * 6
+
+    else:
+        df['IndustrySpreadSlope1'], df['IndustrySpreadCurvature1'], industryspread1 = SlopeCurvatureConstruction('IndustrySpread1', df['industryspread'], CONFIG.M1_1, industryspread1_stored)
+        df['IndustrySpreadSlope2'], df['IndustrySpreadCurvature2'], industryspread2 = SlopeCurvatureConstruction('IndustrySpread2', df['industryspread'], CONFIG.M1_2, industryspread2_stored)
+        df['IndustrySpreadSlope3'], df['IndustrySpreadCurvature3'], industryspread3 = SlopeCurvatureConstruction('IndustrySpread3', df['industryspread'], CONFIG.M1_3, industryspread3_stored)
+    
     
     df['SidedAmount1'], sidedamount1 = PolyEmaConstruction('SidedAmount1', df['sidedAmount'], CONFIG.M1_1, sidedamount1_stored)
     df['SidedAmount2'], sidedamount2 = PolyEmaConstruction('SidedAmount2', df['sidedAmount'], CONFIG.M1_2, sidedamount2_stored)
@@ -180,7 +208,7 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     df['DownTick'] = 0
     PriceDiff = df['price'].diff(periods = 1)
     df['UpTick'][PriceDiff > 0] = PriceDiff
-    df['DownTick'][PriceDiff < 0] = PriceDiff
+    df['DownTick'][PriceDiff < 0] = -PriceDiff
     df['UpTick1'], uptick1 = PolyEmaConstruction('UpTick1', df['UpTick'], CONFIG.M1_1, uptick1_stored)
     df['UpTick2'], uptick2 = PolyEmaConstruction('UpTick2', df['UpTick'], CONFIG.M1_2, uptick2_stored)
     df['UpTick3'], uptick3 = PolyEmaConstruction('UpTick3', df['UpTick'], CONFIG.M1_3, uptick3_stored)
@@ -200,6 +228,11 @@ def FeaturePreparation(df, Stock, Index, DailyData):
     RSI2 = 1 - 1 / (1 + (df['UpTick2'].iloc[-1] / df['DownTick2'].iloc[-1])) if df['DownTick2'].iloc[-1] != 0 else 1
     RSI3 = 1 - 1 / (1 + (df['UpTick3'].iloc[-1] / df['DownTick3'].iloc[-1])) if df['DownTick3'].iloc[-1] != 0 else 1    
     
+    ##############
+    # Volatility #
+    ##############
+    Volatility = np.std(df['price'])
+    
     # Select Last Data Point
     # TODO different starting point for downsampling
     DailyData.loc[Date] = [EndOfDayPendingBuyRatio, TotalAmount, Open, Close, High, Low, BuyRatio, A_buyRatio, B_buyRatio] + \
@@ -207,6 +240,6 @@ def FeaturePreparation(df, Stock, Index, DailyData):
         'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3', 'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 
         'PendingBuySlope3', 'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2', 
         'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustrySpreadSlope2', \
-        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']].tolist() + [RSI1, RSI2, RSI3, Return1, Return2]
+        'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2', 'SidedAmount3']].tolist() + [RSI1, RSI2, RSI3, Volatility, Return1, Return2]
         
     return DailyData
