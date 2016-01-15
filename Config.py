@@ -20,6 +20,7 @@ class CONFIG(object):
     MODELDATAPATH = './ASHR/DATA/Model/%s/%s.pkl'
     DAILYDATAPATH = './Dailydata_%s.csv'
     DAILYVWAPDATAPATH = './Dailyvwapdata_%s.csv'
+    ESTIMATEDMEANDATAPATH = './ASHR/DATA/EstimatedMean/%s.csv'
     
     # last model training update
     LASTMODELUPDATE = '20160106'
