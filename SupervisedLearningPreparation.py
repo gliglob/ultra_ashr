@@ -10,18 +10,57 @@ from Config import CONFIG
 from HelperFunctions import *
 
 stock = 'SZ000001'
-df = pd.read_csv('C:/Users/zklnu66/Desktop/DailyData%s.csv'%stock, index_col = 0)
+df = pd.read_csv('C:/Users/zklnu66/Desktop/DailyData_%s.csv'%stock, index_col = 0)
 df.index.name = 'Time'
+#BacktestFeatures = ['EndOfDayPendingBuyRatio', 'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2',
+#    'PriceCurvature2', 'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3',
+#    'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 'PendingBuySlope3',
+#    'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2',
+#    'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2',
+#    'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2',
+#    'SidedAmount3', 'RSI1', 'RSI2', 'RSI3', 'WilliamR_1', 'WilliamR_2', 'WilliamR_3',
+#    'InverseWilliamR_1', 'InverseWilliamR_2', 'InverseWilliamR_3', 'Disparity1', 'Disparity2', 'Disparity3',
+#    'Disparity12', 'Disparity13', 'Disparity23', 'BuyRatio2', 'BuyRatio3', 'A_buyRatio2', 'A_buyRatio3',
+#    'B_buyRatio2', 'B_buyRatio3', 'EndOfDayPendingBuyRatio2', 'EndOfDayPendingBuyRatio3']
+#    
 BacktestFeatures = ['EndOfDayPendingBuyRatio', 'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2',
-    'PriceCurvature2', 'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3',
+    'PriceCurvature2', 'PriceSlope3', 'PriceCurvature3', 
     'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 'PendingBuySlope3',
     'PendingBuyCurvature3', 'AmountSlope1', 'AmountCurvature1', 'AmountSlope2', 'AmountCurvature2',
     'AmountSlope3', 'AmountCurvature3', 'IndustrySpreadSlope1', 'IndustrySpreadCurvature1', 'IndustryeSpreadSlope2',
-    'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3', 'SidedAmount1', 'SidedAmount2',
-    'SidedAmount3', 'RSI1', 'RSI2', 'RSI3', 'WilliamR_1', 'WilliamR_2', 'WilliamR_3',
-    'InverseWilliamR_1', 'InverseWilliamR_2', 'InverseWilliamR_3', 'Disparity1', 'Disparity2', 'Disparity3',
+    'IndustrySpreadCurvature2', 'IndustrySpreadSlope3', 'IndustrySpreadCurvature3',  'IndexSpreadSlope1', 'IndexSpreadCurvature1', 
+    'IndexSpreadSlope2', 'IndexSpreadCurvature2', 'IndexSpreadSlope3', 'IndexSpreadCurvature3', 'SidedAmount1', 'SidedAmount2',
+    'SidedAmount3', 'RSI1', 'RSI2', 'RSI3', 'Volatility', 'VolatilityIndexSpread', 'VolatilityIndustryIndexSpread', 'BetaIndex', 'BetaIndustryIndex',
+    'WilliamR_1', 'WilliamR_2', 'WilliamR_3','InverseWilliamR_1', 'InverseWilliamR_2', 'InverseWilliamR_3', 'Disparity1', 'Disparity2', 'Disparity3',
     'Disparity12', 'Disparity13', 'Disparity23', 'BuyRatio2', 'BuyRatio3', 'A_buyRatio2', 'A_buyRatio3',
-    'B_buyRatio2', 'B_buyRatio3', 'EndOfDayPendingBuyRatio2', 'EndOfDayPendingBuyRatio3']
+    'B_buyRatio2', 'B_buyRatio3', 'EndOfDayPendingBuyRatio2', 'EndOfDayPendingBuyRatio3', 'Volatility2', 'Volatility3', 
+    'VolatilityIndexSpread2', 'VolatilityIndexSpread3', 'VolatilityIndustryIndexSpread2', 'VolatilityIndustryIndexSpread3',
+    'BetaIndex2', 'BetaIndex3', 'BetaIndustryIndex2', 'BetaIndustryIndex3']
+    
+
+"""
+Pre processing
+Demean: note, we are interested in the theoretical mean
+"""
+DemeanFeatures = {'RSI1' : 0.5, 'RSI2' : 0.5, 'RSI3' : 0.5, 'WilliamR_1' : 0.5, 'WilliamR_2' : 0.5, 'WilliamR_3' : 0.5,
+    'InverseWilliamR_1' : -0.5, 'InverseWilliamR_2' : -0.5, 'InverseWilliamR_3' : -0.5}
+
+
+MeanDataFrame = pd.DataFrame(columns = ['EstimatedMean'])
+for feature in ['Volatility', 'Volatility2', 'Volatility3', 'VolatilityIndexSpread', 'VolatilityIndexSpread2',
+                'VolatilityIndexSpread3', 'VolatilityIndustryIndexSpread', 'VolatilityIndustryIndexSpread2', 'VolatilityIndustryIndexSpread3',
+                'BetaIndex', 'BetaIndustryIndex', 'BetaIndex2', 'BetaIndex3', 'BetaIndustryIndex2', 'BetaIndustryIndex3']:
+    EstimatedMean = np.mean(df[feature])
+    MeanDataFrame.loc[feature] = EstimatedMean
+
+MeanDataFrame.to_csv(CONFIG.ESTIMATEDMEANDATAPATH%stock, index_label = 'Feature')
+    
+    
+for feature in DemeanFeatures.keys():
+    df[feature] -= DemeanFeatures[feature]
+
+
+
 
 TargetFeature = 'Return2'
 TradingHorizon = 1
@@ -99,6 +138,15 @@ X_test_selected = selection.transform(X_test)
 # kept features
 [BacktestFeatures[i] for i in selection.get_support(indices = True)]
 
+"""
+Save model
+"""
+if not os.path.exists(CONFIG.MODELPATH%(stock)):
+    os.makedirs(CONFIG.MODELPATH%stock)
+
+model_name = 'Regr_'
+SaveObject(model, CONFIG.MODELDATAPATH%(stock, model_name + CONFIG.LASTMODELUPDATE))
+
 
 
 #### Pairwise correlation
@@ -134,3 +182,11 @@ fig, axes = plt.subplots(1, 1)
 linkage_graphs.plot_correlation_matrix(corr_matrix_ordered, colnames_ordered, col_order=None, ax=axes)
 
 
+# auto correlation
+# Durbin-Watson statistic
+
+# stationary (unit root)
+# ADF test
+from statsmodels.tsa.stattools import adfuller
+series = df['PriceSlope1']
+adfuller(series)
