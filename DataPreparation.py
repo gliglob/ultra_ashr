@@ -7,6 +7,7 @@ from HelperFunctions import *
 from DataProcessing import *
 from DataCleaning import *
 from FeaturePreparation import *
+from VwapFeaturePreparation import *
 from Config import CONFIG
 logging.info('Setting up...')
 
@@ -100,9 +101,14 @@ for date in CONFIG.TRADINGDAYS:
         # Prepare daily signals
         # TODO Prepare data by session
         
-
-        DailyData = FeaturePreparation(df, stock, IndustryIndex, DailyData)
-        DailyData.index.name = 'Time'
+        # backkfill missing data for df
+        df = df.fillna(method = 'bfill')
+        if df.iloc[-1].isnull().any():
+            DailyData.loc[df.index[-1]] = [None] * (len(CONFIG.FEATURES) - 1) + ['N']
+            logging.warning('Data is missing in some fields for processed data of %s on %s, set IncludedInTraining to N'%(stock, date))
+        else:
+            DailyData = FeaturePreparation(df, stock, IndustryIndex, Index, DailyData)
+            DailyData.index.name = 'Time'
         
         ENDTIME = time.time()
         logger.info('Stock: %s, Date: %s, Time to Prepare Feature: %f sec'%(stock, date, ENDTIME-STARTTIME))
@@ -112,6 +118,67 @@ for date in CONFIG.TRADINGDAYS:
             logging.warning('Data for %s is missing on %s when preparing features'%(stock, date))
         else:
             logging.warning('Other Critical Error When Preparing Features for %s on %s'%(stock, date))
-            
+    
+_checker = 0
+while _checker <= 2:
+    _checker += 1
+    try:
+        DailyData.to_csv(CONFIG.DAILYDATAPATH%stock)
+        break
+    except Exception, e:
+        if _checker == 1:
+            logging.warning(str(e))
+        if _checker >= 3:
+            logging.warning('Other Critical Error When Saving Data of %s'%stock)
 
-DailyData.to_csv(CONFIG.DAILYDATAPATH%stock)
+#####################
+# VWAP Feature Prep #
+#####################
+
+DailyVwapData = CONFIG.DAILYVWAPDATAFRAME.copy()
+
+logging.warning('VWAP Feature Preparation Start... For Stock %s From %s To %s...'%(stock, CONFIG.TRADINGDAYS[0], CONFIG.TRADINGDAYS[-1]))
+
+IndustryIndex = CONFIG.STOCKINDUSTRYINDEXMAP.IndustryCode[stock]
+Index = CONFIG.STOCKINDUSTRYINDEXMAP.IndexCode[stock]
+logging.info('The corresponding industry index for stock %s is %s'%(stock, IndustryIndex))
+logging.info('The corresponding index for stock %s is %s'%(stock, Index))
+
+for date in CONFIG.TRADINGDAYS:
+    ProcessedDataPath = CONFIG.PROCESSEDDATAPATH%(stock, date)
+    try:
+        STARTTIME = time.time()  
+        df = pd.read_csv(ProcessedDataPath, index_col = 'time')
+        df.index = TimeWrapper3(df.index)
+        # Prepare daily signals
+        # TODO Prepare data by session
+        
+        # backkfill missing data for df
+        df = df.fillna(method = 'bfill')
+        if df.iloc[-1].isnull().any():
+            DailyVwapData.loc[df.index[-1]] = [None] * (len(CONFIG.VWAPFEATURES))
+            logging.warning('Data is missing in some fields for processed data of %s on %s, set IncludedInTraining to N'%(stock, date))
+        else:
+            DailyVwapData = VwapFeaturePreparation(df, stock, IndustryIndex, Index, DailyVwapData)
+            DailyVwapData.index.name = 'Time'
+        
+        ENDTIME = time.time()
+        logger.info('Stock: %s, Date: %s, Time to Prepare Feature: %f sec'%(stock, date, ENDTIME-STARTTIME))
+    except Exception, e:
+        logging.warning(str(e))
+        if (not os.path.isfile(ProcessedDataPath)):
+            logging.warning('Data for %s is missing on %s when preparing features'%(stock, date))
+        else:
+            logging.warning('Other Critical Error When Preparing Features for %s on %s'%(stock, date))
+    
+_checker = 0
+while _checker <= 2:
+    _checker += 1
+    try:
+        DailyVwapData.to_csv(CONFIG.DAILYVWAPDATAPATH%stock)
+        break
+    except Exception, e:
+        if _checker == 1:
+            logging.warning(str(e))
+        if _checker >= 3:
+            logging.warning('Other Critical Error When Saving Data of %s'%stock)
