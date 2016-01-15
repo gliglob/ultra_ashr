@@ -1,6 +1,7 @@
 from __future__ import division
 from Config import CONFIG
 import pandas as pd
+import numpy as np
 
 def DailyDataFeaturePrep(stock):
     """
@@ -63,5 +64,20 @@ def DailyDataFeaturePrep(stock):
     df['EndOfDayPendingBuyRatio2'] = pd.rolling_mean(df.EndOfDayPendingBuyRatio, Scale2, 0)
     df['EndOfDayPendingBuyRatio3'] = pd.rolling_mean(df.EndOfDayPendingBuyRatio, Scale3, 0)
     
+    # Volatility
+    df['Volatility2'] = pd.rolling_mean(df.Volatility, Scale2, 0)
+    df['Volatility3'] = pd.rolling_mean(df.Volatility, Scale3, 0)
+    df['VolatilityIndexSpread2'] = pd.rolling_mean(df.VolatilityIndexSpread, Scale2, 0)
+    df['VolatilityIndexSpread3'] = pd.rolling_mean(df.VolatilityIndexSpread, Scale3, 0)
+    df['VolatilityIndustryIndexSpread2'] = pd.rolling_mean(df.VolatilityIndustryIndexSpread2, Scale2, 0)
+    df['VolatilityIndustryIndexSpread3'] = pd.rolling_mean(df.VolatilityIndustryIndexSpread3, Scale3, 0)
+    
+    # Beta
+    df['BetaIndex2'] = pd.rolling_mean(df.BetaIndex, Scale2, 0)
+    df['BetaIndex3'] = pd.rolling_mean(df.BetaIndex, Scale3, 0)
+    df['BetaIndustryIndex2'] = pd.rolling_mean(df.BetaIndustryIndex, Scale2, 0)
+    df['BetaIndustryIndex3'] = pd.rolling_mean(df.BetaIndustryIndex, Scale3, 0)
+    
+        
 
-df = pd.read_csv('/Users/zklnu66/Desktop/DailyDataSZ000001.csv', index_col = 'Time')
+    df.to_csv('/Users/zklnu66/Desktop/DailyData_SZ000001.csv', index_col = 'Time')
