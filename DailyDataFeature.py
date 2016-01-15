@@ -69,8 +69,8 @@ def DailyDataFeaturePrep(stock):
     df['Volatility3'] = pd.rolling_mean(df.Volatility, Scale3, 0)
     df['VolatilityIndexSpread2'] = pd.rolling_mean(df.VolatilityIndexSpread, Scale2, 0)
     df['VolatilityIndexSpread3'] = pd.rolling_mean(df.VolatilityIndexSpread, Scale3, 0)
-    df['VolatilityIndustryIndexSpread2'] = pd.rolling_mean(df.VolatilityIndustryIndexSpread2, Scale2, 0)
-    df['VolatilityIndustryIndexSpread3'] = pd.rolling_mean(df.VolatilityIndustryIndexSpread3, Scale3, 0)
+    df['VolatilityIndustryIndexSpread2'] = pd.rolling_mean(df.VolatilityIndustryIndexSpread, Scale2, 0)
+    df['VolatilityIndustryIndexSpread3'] = pd.rolling_mean(df.VolatilityIndustryIndexSpread, Scale3, 0)
     
     # Beta
     df['BetaIndex2'] = pd.rolling_mean(df.BetaIndex, Scale2, 0)
