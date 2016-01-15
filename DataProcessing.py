@@ -54,6 +54,8 @@ def TickDataProcessing(df):
     
     df['sidedAmount'].iloc[1:] = df['sidedAmountRolling'].diff()
     df['amount'].iloc[1:] = df['amountRolling'].diff()    
+    df['sidedAmount'].iloc[0] = df['sidedAmountRolling'].iloc[0]
+    df['amount'].iloc[0] = df['amountRolling'].iloc[0]
     
     ################################################################
     # Note, Price, Amount, Volume Columns Are All On the Log Scale #
