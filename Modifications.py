@@ -183,3 +183,71 @@ for date in CONFIG.TRADINGDAYS:
                 else:
                     logging.warning('Other Critical Error When Reading Data of %s on %s'%(stock, date))
        
+
+"""
+Modification 6:
+    add volume weighted price using tick data
+"""
+
+DailyVWAP = pd.DataFrame(columns = ['vw_price'])
+
+for date in CONFIG.TRADINGDAYS:
+    TickDataPath = CONFIG.TICKDATAPATH%(date[:-2], date, stock)
+    ProcessedDataPath = CONFIG.PROCESSEDDATAPATH%(stock, date)
+    _checker = 0
+    while _checker <= 2:
+        _checker += 1
+        try: 
+            STARTTIME = time.time()
+            df_tick = pd.read_csv(TickDataPath, header = None, names = ['time', 'price', 'side', 'volume'])
+            df_tick = TickDataCleaning(df_tick)
+            
+            df_tick['volumeRolling'] = df_tick['volume'].cumsum()           
+            df_tick['priceXvolume'] = df_tick['price'] * df_tick['volume']
+            df_tick['priceXvolumeRolling'] = df_tick['priceXvolume'].cumsum() 
+                        
+            df_tick = df_tick.set_index('time')
+            df_tick = df_tick.apply(lambda x: x.asof(CONFIG.INTRADAYMASTERCLOCK.MasterClock))    
+                
+            df_tick['volume'].iloc[1:] = df_tick['volumeRolling'].diff()
+            df_tick['volume'].iloc[0] = df_tick['volumeRolling'].iloc[0]
+            df_tick['priceXvolume'].iloc[1:] = df_tick['priceXvolumeRolling'].diff()
+            df_tick['priceXvolume'].iloc[0] = df_tick['priceXvolumeRolling'].iloc[0]
+            
+            df_tick['vw_price'] = None
+            df_tick['vw_price'][df_tick['volume'] != 0] = df_tick['priceXvolume'] / df_tick['volume']
+            df_tick['vw_price'] = df_tick['vw_price'].fillna(method = 'ffill')
+            # now set the vw_price to price if data for the first row is missing
+            df_tick['vw_price'] = df_tick['vw_price'].fillna(df_tick['price'])
+            df_tick['vw_price'][df_tick['vw_price'] !=0] = np.log(abs(df_tick['vw_price'])) * (df_tick['vw_price'] / abs(df_tick['vw_price']))
+            
+            vw_price_day = df_tick['priceXvolumeRolling'].iloc[-1] / df_tick['volumeRolling'].iloc[-1] if df_tick['volumeRolling'].iloc[-1] != 0 else np.mean(df_tick['price'])     
+            
+            vw_price = df_tick['vw_price'].tolist()
+            
+            # read processed data
+            df = pd.read_csv(ProcessedDataPath, index_col = 'time')
+            df.index = TimeWrapper3(df.index)
+            
+            df['vw_price'] = vw_price
+            df.to_csv(CONFIG.PROCESSEDDATAPATH%(stock, date), index_label = 'time')
+            
+            Date = df.index[-1]
+            DailyVWAP.loc[Date] = vw_price_day
+            
+            # Save Processed Daily Intraday 3sec Data
+#            df.to_csv(CONFIG.PROCESSEDDATAPATH%(stock, date), index_label = 'time')
+
+            ENDTIME = time.time()
+            logger.info('Stock: %s, Date: %s, Time to Process: %f sec'%(stock, date, ENDTIME-STARTTIME))
+            break
+        except Exception, e:
+            if _checker == 1:
+                logging.warning(str(e))
+            if _checker >= 3:
+                if (not os.path.isfile(TickDataPath)) or (not os.path.isfile(SecondDataPath)):
+                    logging.warning('Data for %s is missing on %s when reading data'%(stock, date))
+                else:
+                    logging.warning('Other Critical Error When Reading and Processing Data of %s on %s'%(stock, date))
+
+DailyVWAP.to_csv('./DATA/DailyVWAP/DailyVWAP_%s.csv'%stock, index_label = 'time')
