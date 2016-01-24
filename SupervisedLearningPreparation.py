@@ -10,8 +10,17 @@ from Config import CONFIG
 from HelperFunctions import *
 
 stock = 'SZ000001'
-df = pd.read_csv('C:/Users/zklnu66/Desktop/DailyData_%s.csv'%stock, index_col = 0)
-df.index.name = 'Time'
+#df = pd.read_csv('C:/Users/zklnu66/Desktop/ASHR/DailyData/%s.csv'%stock, index_col = 0)
+#df.index.name = 'Time'
+
+df = pd.read_csv('C:/Users/zklnu66/Desktop/ASHR/DailyData/%s.csv'%stock)
+
+df = df[df['IncludedInTraining'] == 'Y']
+df = df.set_index('Time')
+
+df['Return2'] = np.exp(-df['Open'] + df.shift(-1)['Open']) - 1
+df['Target'] = df['Return2'].shift(-1)
+
 #BacktestFeatures = ['EndOfDayPendingBuyRatio', 'BuyRatio', 'A_buyRatio', 'B_buyRatio', 'PriceSlope1', 'PriceCurvature1', 'PriceSlope2',
 #    'PriceCurvature2', 'PriceSlope3', 'PriceCurvature3', 'PricePema1', 'PricePema2', 'PricePema3',
 #    'PendingBuySlope1', 'PendingBuyCurvature1', 'PendingBuySlope2', 'PendingBuyCurvature2', 'PendingBuySlope3',
