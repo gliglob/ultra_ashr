@@ -33,10 +33,24 @@ class OKCoinSpot(object):
         self.db = sql.connect(host='localhost', user='root', db='bitcoin')
         self.db.autocommit(True)
         self.cursor = self.db.cursor()
+        self.mysqlQuery = ''
         
     def Tick(self):
         """
-        This combines data from the candlestick and 
+        This combines data from the candlestick and tick data
+        /tick data/
+        date: current datetime
+        buy:  best bid
+        sell: best ask
+        high: high in rolling 24hours
+        low:  low in rolling 24hours
+        /candlestick data/
+        date1min: most recent 1min datetime
+        open1min: open for 1min data
+        high1min: high in 1min
+        low1min: low in 1min
+        close1min: close for 1min data
+        vol1min: volume in 1min
         """
         logging.info('Requesting from %s'%self.exchange)
         # get the most recent trade price
@@ -50,6 +64,13 @@ class OKCoinSpot(object):
 #        self.BTCTickData.loc[len(self.BTCTickData)] = [json_data.loc[i][1] for i in self.BTCTickData.columns]
         # get the most recent 1min candle stick        
         p = requests.get(self.url_candlestick%self._symbol)
+        json_candlestick = json.loads(p.text.decode('utf-8'))[0]
+        json_data['date1min'] = datetime.datetime.fromtimestamp(int(json_candlestick[0])/1000).strftime('%Y-%m-%d %H:%M:%S')
+        json_data['open1min'] = json_candlestick[1]
+        json_data['high1min'] = json_candlestick[2]
+        json_data['low1min']  = json_candlestick[3]
+        json_data['close1min'] = json_candlestick[4]
+        json_data['vol1min'] =  json_candlestick[5]
         self.CurrentTick = json_data
     
     def SaveUpdatedBTCTickData(self, BTCTickDataPath):
@@ -76,13 +97,15 @@ class OKCoinSpot(object):
         return self.CurrentOrderBook
     
     def SaveCurrentTickToMySQL(self):
-        self.cursor.execute("""\
+        self.mysqlQuery = """\
         INSERT INTO btc \
-        (time, date, tradeTime, tradeDate, product, exchange, last, high, low, buy, sell, vol) \
+        (time, date, tradeTime, tradeDate, product, exchange, last, high, low, buy, sell, vol, tradeTime1min, close1min, open1min, high1min, low1min, vol1min) \
         VALUES \
-        (NOW(), CURDATE(), '{0}', '{1}', '{2}', '{3}', {4}, {5}, {6}, {7}, {8}, {9});\
-        """.format(self.CurrentTick['date'], self.CurrentTick['date'][:10], self.product, self.exchange, self.CurrentTick['last'], self.CurrentTick['high'], self.CurrentTick['low'], self.CurrentTick['buy'], self.CurrentTick['sell'], self.CurrentTick['vol']))
+        (NOW(), CURDATE(), '{0}', '{1}', '{2}', '{3}', {4}, {5}, {6}, {7}, {8}, {9}, '{10}', {11}, {12}, {13}, {14}, {15});\
+        """.format(self.CurrentTick['date'], self.CurrentTick['date'][:10], self.product, self.exchange, self.CurrentTick['last'], self.CurrentTick['high'], self.CurrentTick['low'], self.CurrentTick['buy'], self.CurrentTick['sell'], self.CurrentTick['vol'], self.CurrentTick['date1min'], self.CurrentTick['close1min'], self.CurrentTick['open1min'], self.CurrentTick['high1min'], self.CurrentTick['low1min'], self.CurrentTick['vol1min'])
 
+        self.cursor.execute(self.mysqlQuery)
+        
     def ResetAutoIncrement(self):
         self.cursor.execute("""ALTER TABLE btc auto_increment = 1;""")
     
@@ -108,40 +131,41 @@ class Config(object):
     'product' : 'LTC'}
 
 
-
-
 def DataHandler(btcobject):
-    threading.Timer(10.0, DataHandler, args=(btcobject,)).start()
-    print('time is %s'%time.time())
-    print(btcobject.product)    
+    threading.Timer(60.0, DataHandler, args=(btcobject,)).start()
+    print('time is %s'%datetime.datetime.fromtimestamp(int(time.time())).strftime('%Y-%m-%d %H:%M:%S'))
+    print('Getting %s Tick'%btcobject.product)
 #    
     btcobject.Tick()
     btcobject.SaveCurrentTickToMySQL()
 
     #CurrentTick = btcspot.GetTick()
     #CurrentOrderBook = btcspot.GetDepth()
-
+                    
 btcspot = OKCoinSpot(
                     Config.okcoin_btcspot['product'], 
                     Config.okcoin_btcspot['exchange'], 
-                    Config.okcoin_btcspot['url'], 
+                    Config.okcoin_btcspot['url_tick'], 
+                    Config.okcoin_btcspot['url_candlestick'],
+                    Config.okcoin_btcspot['url_depth'],
                     Config.okcoin_btcspot['symbol']
                     )
-                    
-#btcspot.ResetTable()
-#btcspot.ResetAutoIncrement()
-                    
+                
+
+                
 ltcspot = OKCoinSpot(
                     Config.okcoin_ltcspot['product'], 
                     Config.okcoin_ltcspot['exchange'], 
-                    Config.okcoin_ltcspot['url'], 
+                    Config.okcoin_btcspot['url_tick'], 
+                    Config.okcoin_btcspot['url_candlestick'],
+                    Config.okcoin_btcspot['url_depth'],
                     Config.okcoin_ltcspot['symbol']
                     )
-                    
 
-threading.Thread(target = DataHandler, args=(btcspot, )).start()
+btcspot.ResetTable()
+btcspot.ResetAutoIncrement()
 
-p = requests.get('https://www.okcoin.com/api/v1/kline.do?symbol=btc_usd&type=5min')
-json_data = json.loads(p.text.decode('utf-8'))
-json_data['asks'] = zip(*json_data['asks'])
-json_data['bids'] = zip(*json_data['bids'])
+if __name__ == '__main__':
+    threading.Thread(target = DataHandler, args=(btcspot, )).start()
+    threading.Thread(target = DataHandler, args=(ltcspot, )).start()
+    
